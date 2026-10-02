@@ -29,6 +29,20 @@ public final class CosmeticsManager {
     private String effectId = "";
     private final Map<String, String> playerHats = new HashMap<>();
     private final Map<String, String> playerEffects = new HashMap<>();
+    private final Map<String, String> remoteHats = new java.util.concurrent.ConcurrentHashMap<>();
+    private final Map<String, String> remoteEffects = new java.util.concurrent.ConcurrentHashMap<>();
+
+    /** Von der Cosmetics-API/aus dem Cache gemeldete Cosmetics eines anderen Spielers. */
+    public void setRemote(String uuidKey, String hat, String effect) {
+        String h = sanitize(hat), e = sanitize(effect);
+        if (h.isEmpty()) remoteHats.remove(uuidKey); else remoteHats.put(uuidKey, h);
+        if (e.isEmpty()) remoteEffects.remove(uuidKey); else remoteEffects.put(uuidKey, e);
+    }
+
+    /** Ist der Spieler der eigene Account? */
+    public boolean isOwner(UUID uuid) {
+        return uuid != null && uuid.toString().replace("-", "").toLowerCase(Locale.ROOT).equals(CapeManager.get().config().ownerUuid);
+    }
 
     private CosmeticsManager() {}
 
@@ -66,7 +80,8 @@ public final class CosmeticsManager {
         String key = uuid.toString().replace("-", "").toLowerCase(Locale.ROOT);
         CosmeticsConfig cfg = CapeManager.get().config();
         if (key.equals(cfg.ownerUuid)) return hatId.isEmpty() ? null : hatId;
-        return playerHats.get(key);
+        String local = playerHats.get(key);
+        return local != null ? local : remoteHats.get(key);
     }
 
     public String effectFor(UUID uuid) {
@@ -74,7 +89,8 @@ public final class CosmeticsManager {
         String key = uuid.toString().replace("-", "").toLowerCase(Locale.ROOT);
         CosmeticsConfig cfg = CapeManager.get().config();
         if (key.equals(cfg.ownerUuid)) return effectId.isEmpty() ? null : effectId;
-        return playerEffects.get(key);
+        String local = playerEffects.get(key);
+        return local != null ? local : remoteEffects.get(key);
     }
 
     public void setHat(String id) {

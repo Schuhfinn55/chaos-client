@@ -174,7 +174,6 @@ public final class CapeManager {
         Identifier id = capes.get(key);
         if (id != null) return id;
         if (own) return null;
-        if (!config.showOtherCapes) return null;
         if (negative.contains(key) || pending.contains(key)) return null;
         if (!pending.add(key)) return null;
         executor.submit(() -> resolveRemote(key));
@@ -238,6 +237,13 @@ public final class CapeManager {
                     if (m != null && m.has("sha1")) cachedSha1 = m.get("sha1").getAsString();
                 } catch (Exception ignored) {}
             }
+            // Hut/Effekt aus dem Cache vormerken (falls API nicht erreichbar)
+            try {
+                if (Files.exists(meta)) {
+                    JsonObject m = GSON.fromJson(Files.readString(meta), JsonObject.class);
+                    if (m != null) CosmeticsManager.get().setRemote(uuidKey, m.has("hat") ? m.get("hat").getAsString() : "", m.has("effect") ? m.get("effect").getAsString() : "");
+                }
+            } catch (Exception ignored) {}
             if (config.apiUrl.isEmpty()) { useCacheOrGiveUp(client, uuidKey, cached); return; }
             String base = config.apiUrl.replaceAll("/+$", "");
             HttpRequest req = HttpRequest.newBuilder(URI.create(base + "/v1/cosmetics/" + uuidKey))
@@ -247,9 +253,21 @@ public final class CapeManager {
             if (resp.statusCode() == 404) { negative.add(uuidKey); pending.remove(uuidKey); return; }
             if (resp.statusCode() != 200) { useCacheOrGiveUp(client, uuidKey, cached); return; }
             JsonObject body = GSON.fromJson(resp.body(), JsonObject.class);
-            if (body == null || !body.has("activeCape") || !body.get("activeCape").isJsonObject()) { negative.add(uuidKey); pending.remove(uuidKey); return; }
+            if (body == null) { negative.add(uuidKey); pending.remove(uuidKey); return; }
             String vis = body.has("visibility") ? body.get("visibility").getAsString() : "everyone";
-            if ("none".equals(vis)) { negative.add(uuidKey); pending.remove(uuidKey); return; }
+            if ("none".equals(vis)) { CosmeticsManager.get().setRemote(uuidKey, "", ""); negative.add(uuidKey); pending.remove(uuidKey); return; }
+            String rHat = body.has("hat") && !body.get("hat").isJsonNull() ? body.get("hat").getAsString() : "";
+            String rEffect = body.has("effect") && !body.get("effect").isJsonNull() ? body.get("effect").getAsString() : "";
+            CosmeticsManager.get().setRemote(uuidKey, rHat, rEffect);
+            try {
+                Files.createDirectories(cached.getParent());
+                JsonObject m0 = Files.exists(meta) ? GSON.fromJson(Files.readString(meta), JsonObject.class) : new JsonObject();
+                if (m0 == null) m0 = new JsonObject();
+                m0.addProperty("hat", rHat);
+                m0.addProperty("effect", rEffect);
+                Files.writeString(meta, GSON.toJson(m0));
+            } catch (Exception ignored) {}
+            if (!body.has("activeCape") || !body.get("activeCape").isJsonObject()) { negative.add(uuidKey); pending.remove(uuidKey); return; }
             JsonObject cape = body.getAsJsonObject("activeCape");
             String url = cape.has("url") ? cape.get("url").getAsString() : "";
             String sha1 = cape.has("sha1") ? cape.get("sha1").getAsString() : "";
@@ -262,6 +280,8 @@ public final class CapeManager {
             Files.write(cached, png.body());
             JsonObject m = new JsonObject();
             m.addProperty("sha1", sha1);
+            m.addProperty("hat", rHat);
+            m.addProperty("effect", rEffect);
             m.addProperty("cachedAt", System.currentTimeMillis());
             Files.writeString(meta, GSON.toJson(m));
             registerBytes(client, uuidKey, png.body(), "api");

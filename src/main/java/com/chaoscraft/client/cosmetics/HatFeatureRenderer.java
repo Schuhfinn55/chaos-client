@@ -90,7 +90,10 @@ public final class HatFeatureRenderer extends FeatureRenderer<PlayerEntityRender
         CosmeticsModule mod = cc.getModuleManager().get(CosmeticsModule.class);
         if (mod != null && !mod.categoryToggle("HATS").isEnabled()) return;
         UUID uuid = cps.chaos$uuid();
-        String hatId = CosmeticsManager.get().hatFor(uuid);
+        CosmeticsManager cm = CosmeticsManager.get();
+        if (mod != null && !cm.isOwner(uuid) && !mod.showOthers().isEnabled()) return;
+        if (mod != null && cm.isOwner(uuid) && !mod.showOwn().isEnabled()) return;
+        String hatId = cm.hatFor(uuid);
         if (hatId == null) return;
         HatCatalog.Hat hat = HatCatalog.byId(hatId);
         if (hat == null) return;

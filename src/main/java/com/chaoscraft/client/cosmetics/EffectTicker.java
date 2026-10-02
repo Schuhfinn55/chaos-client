@@ -36,6 +36,8 @@ public final class EffectTicker {
         CosmeticsManager cm = CosmeticsManager.get();
         for (AbstractClientPlayerEntity p : mc.world.getPlayers()) {
             if (p.isInvisible() || p.isSpectator() || p.squaredDistanceTo(mc.player) > 48 * 48) continue;
+            boolean own = cm.isOwner(p.getUuid());
+            if (mod != null && ((own && !mod.showOwn().isEnabled()) || (!own && !mod.showOthers().isEnabled()))) continue;
             String id = cm.effectFor(p.getUuid());
             if (id == null) continue;
             EffectCatalog.Effect e = EffectCatalog.byId(id);
