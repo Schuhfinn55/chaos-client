@@ -26,8 +26,9 @@ public class EmotesModule extends Module {
         getKeybindSetting().set(GLFW.GLFW_KEY_B);
         alwaysOn();
         tags("emote", "winken", "tanzen", "animation");
-        ChaosClient cc = ChaosClient.get();
-        // Emotes des Managers sind zur Konstruktionszeit evtl. noch nicht da → lazy in onTick
+        // Eingebaute Emotes vorab registrieren, damit gespeicherte Keybinds beim Config-Laden greifen;
+        // später hinzugefügte Emotes bekommen ihren Keybind lazy in onTick.
+        for (String id : EmoteManager.BUILTIN_IDS) keyFor(id);
     }
 
     public KeybindSetting keyFor(String emoteId) {

@@ -28,6 +28,9 @@ public final class EmoteManager {
         default void onEnd(MinecraftClient mc) {}
     }
 
+    /** IDs der eingebauten Emotes – für die vorab registrierten Keybinds im EmotesModule. */
+    public static final List<String> BUILTIN_IDS = List.of("wave", "point", "cheer", "spin", "bow");
+
     private final List<Emote> emotes = new ArrayList<>();
     private Emote active;
     private int tick;
