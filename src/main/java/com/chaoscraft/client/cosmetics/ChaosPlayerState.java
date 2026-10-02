@@ -1,4 +1,4 @@
-package com.chaoscraft.client.mixin;
+package com.chaoscraft.client.cosmetics;
 
 import java.util.UUID;
 

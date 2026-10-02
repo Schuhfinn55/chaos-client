@@ -1,5 +1,6 @@
 package com.chaoscraft.client.mixin;
 
+import com.chaoscraft.client.cosmetics.ChaosPlayerState;
 import net.minecraft.client.render.entity.state.PlayerEntityRenderState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;

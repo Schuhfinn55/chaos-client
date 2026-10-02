@@ -1,7 +1,7 @@
 package com.chaoscraft.client.cosmetics;
 
 import com.chaoscraft.client.ChaosClient;
-import com.chaoscraft.client.mixin.ChaosPlayerState;
+
 import com.chaoscraft.client.modules.cosmetics.CosmeticsModule;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.model.ModelData;
