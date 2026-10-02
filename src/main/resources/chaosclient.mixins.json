@@ -1,0 +1,16 @@
+{
+  "required": true,
+  "package": "com.onyx.visuals.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "CpsMixin",
+    "ChatListenerMixin",
+    "OutlineMixin",
+    "ZoomMixin",
+    "FullbrightMixin",
+    "PlayerListEntryMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

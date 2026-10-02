@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "chaosclient",
+  "version": "${version}",
+  "name": "Chaos Client",
+  "description": "Der Chaos-Launcher-Client: Cosmetics (eigene Capes ingame, Chaos-Cosmetics-API) und legitime Module wie Fullbright, Zoom, Keystrokes, CPS, Armor Status, FPS/Ping, ToggleSprint/Sneak, AutoGG, TimeChanger.",
+  "authors": ["ChaoscraftSMP"],
+  "contact": {},
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "client": ["com.onyx.visuals.OnyxVisuals"]
+  },
+  "mixins": ["chaosclient.mixins.json"],
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "minecraft": "~1.21.11",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}
