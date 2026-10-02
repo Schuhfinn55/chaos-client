@@ -1,14 +1,19 @@
 {
   "required": true,
-  "package": "com.onyx.visuals.mixin",
+  "package": "com.chaoscraft.client.mixin",
   "compatibilityLevel": "JAVA_21",
   "client": [
+    "CameraMixin",
+    "ChatHudMixin",
     "CpsMixin",
-    "ChatListenerMixin",
-    "OutlineMixin",
-    "ZoomMixin",
+    "EntityLookMixin",
     "FullbrightMixin",
-    "PlayerListEntryMixin"
+    "InGameHudMixin",
+    "MouseMixin",
+    "OutlineMixin",
+    "PlayerListEntryMixin",
+    "PlayerListHudMixin",
+    "ZoomMixin"
   ],
   "injectors": {
     "defaultRequire": 1

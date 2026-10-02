@@ -3,13 +3,16 @@
   "id": "chaosclient",
   "version": "${version}",
   "name": "Chaos Client",
-  "description": "Der Chaos-Launcher-Client: Cosmetics (eigene Capes ingame, Chaos-Cosmetics-API) und legitime Module wie Fullbright, Zoom, Keystrokes, CPS, Armor Status, FPS/Ping, ToggleSprint/Sneak, AutoGG, TimeChanger.",
+  "description": "Der Chaos Client des Chaos Launchers: Ingame-Menü (RIGHT SHIFT), HUD-Editor, HUD-Module (FPS, CPS, Keystrokes, Koordinaten, Armor, Effekte, Scoreboard, Tablist), Crosshair-Editor, Damage Indicator, Waypoints, Zoom, Fullbright, Free Look, Performance Center, Cosmetics mit eigenen Capes (verbunden mit dem Launcher), Emotes, Social, Server-Schnellmenü, Music Player, Notifications, Profile und /chaos-Befehle.",
   "authors": ["ChaoscraftSMP"],
-  "contact": {},
+  "contact": {
+    "homepage": "https://github.com/Schuhfinn55/chaos-launcher",
+    "sources": "https://github.com/Schuhfinn55/chaos-launcher"
+  },
   "license": "MIT",
   "environment": "client",
   "entrypoints": {
-    "client": ["com.onyx.visuals.OnyxVisuals"]
+    "client": ["com.chaoscraft.client.ChaosClient"]
   },
   "mixins": ["chaosclient.mixins.json"],
   "depends": {
@@ -17,5 +20,16 @@
     "minecraft": "~1.21.11",
     "java": ">=21",
     "fabric-api": "*"
+  },
+  "suggests": {
+    "sodium": "*",
+    "entityculling": "*"
+  },
+  "custom": {
+    "chaosclient": {
+      "launcherMinVersion": "2.0.0",
+      "sharedDataFile": "chaos-client/shared.json",
+      "ingameStateFile": "chaos-cosmetics/ingame-state.json"
+    }
   }
 }
