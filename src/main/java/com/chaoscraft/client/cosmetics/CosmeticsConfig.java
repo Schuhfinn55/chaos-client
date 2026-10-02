@@ -35,6 +35,7 @@ public final class CosmeticsConfig {
     public boolean showOtherCapes = true;
     public boolean autoLoadCapes = true;
     public String apiUrl = "";
+    public boolean allowHttp = false;
     public String ownerUuid = "";
     public String ownerName = "";
     public String activeCapeId = "";
@@ -61,6 +62,7 @@ public final class CosmeticsConfig {
             cfg.showOtherCapes = getBool(root, "showOtherCapes", true);
             cfg.autoLoadCapes = getBool(root, "autoLoadCapes", true);
             cfg.apiUrl = getStr(root, "apiUrl", "");
+            cfg.allowHttp = getBool(root, "allowHttp", false);
             cfg.ownerUuid = normalizeUuid(getStr(root, "ownerUuid", ""));
             cfg.ownerName = getStr(root, "ownerName", "");
             cfg.visibility = getStr(root, "visibility", "everyone");

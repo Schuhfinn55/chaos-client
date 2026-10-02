@@ -271,7 +271,7 @@ public final class CapeManager {
             JsonObject cape = body.getAsJsonObject("activeCape");
             String url = cape.has("url") ? cape.get("url").getAsString() : "";
             String sha1 = cape.has("sha1") ? cape.get("sha1").getAsString() : "";
-            if (url.isEmpty() || !url.startsWith("https://")) { useCacheOrGiveUp(client, uuidKey, cached); return; }
+            if (url.isEmpty() || !(url.startsWith("https://") || (config.allowHttp && url.startsWith("http://")))) { useCacheOrGiveUp(client, uuidKey, cached); return; }
             if (cachedSha1 != null && !sha1.isEmpty() && cachedSha1.equals(sha1) && Files.exists(cached)) { registerBytes(client, uuidKey, Files.readAllBytes(cached), "cache"); return; }
             HttpRequest dl = HttpRequest.newBuilder(URI.create(url)).timeout(Duration.ofSeconds(15)).header("User-Agent", "chaos-client/" + ChaosClient.VERSION).GET().build();
             HttpResponse<byte[]> png = http.send(dl, HttpResponse.BodyHandlers.ofByteArray());
