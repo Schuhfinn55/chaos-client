@@ -2,6 +2,9 @@ package com.chaoscraft.client.ui.screens;
 
 import com.chaoscraft.client.ChaosClient;
 import com.chaoscraft.client.cosmetics.CapeManager;
+import com.chaoscraft.client.cosmetics.CosmeticsManager;
+import com.chaoscraft.client.cosmetics.EffectCatalog;
+import com.chaoscraft.client.cosmetics.HatCatalog;
 import com.chaoscraft.client.cosmetics.CosmeticsConfig;
 import com.chaoscraft.client.emotes.EmoteManager;
 import com.chaoscraft.client.modules.cosmetics.CosmeticsModule;
@@ -52,7 +55,7 @@ public class CosmeticsScreen extends ChaosScreen {
         for (int i = 0; i < tabs.length; i++) {
             final Tab t = tabs[i];
             Button b = new Button(tx, ty, 112, 20, names[i], () -> { tab = t; init(); }).style(Button.Style.GHOST).active(tab == t);
-            if (t != Tab.CAPES && t != Tab.EMOTES) b.tooltip("Folgt mit einem Chaos-Client-Update über die Cosmetics-API.");
+            if (t == Tab.WINGS || t == Tab.BACK) b.tooltip("Folgt mit einem Chaos-Client-Update über die Cosmetics-API.");
             add(b);
             ty += 24;
         }
@@ -60,6 +63,8 @@ public class CosmeticsScreen extends ChaosScreen {
         switch (tab) {
             case CAPES -> buildCapes();
             case EMOTES -> buildEmotes();
+            case HATS -> buildHats();
+            case PARTICLES -> buildEffects();
             default -> buildComing();
         }
     }
@@ -124,6 +129,113 @@ public class CosmeticsScreen extends ChaosScreen {
         }
         content.add(new Label(x, y + 4, w, "Emotes laufen clientseitig (Handschwung, Drehung). Synchronisierte Animationen folgen über die Cosmetics-API.", theme().textFaint()));
         content.setContentHeight(y + 24 - content.y);
+    }
+
+    private void buildHats() {
+        CosmeticsManager cm = CosmeticsManager.get();
+        CosmeticsModule mod = ChaosClient.get().getModuleManager().get(CosmeticsModule.class);
+        int x = content.x + 8, w = content.w - 24, y = content.y + 4;
+        if (mod != null) {
+            var s = mod.categoryToggle("HATS");
+            content.add(new Label(x, y + 4, w - 40, "Hüte anzeigen", theme().text()));
+            content.add(new ToggleWidget(x + w - 30, y, s::isEnabled, s::set));
+            y += 24;
+        }
+        content.add(new Label(x, y, w, "HÜTE  §8· werden am Kopf gerendert, andere Chaos-Spieler sehen sie über die API", theme().accentLight()));
+        y += 14;
+        content.add(new Button(x, y, 100, 16, cm.hatId().isEmpty() ? "Kein Hut ✓" : "Kein Hut", () -> { cm.setHat(""); init(); }).style(cm.hatId().isEmpty() ? Button.Style.PRIMARY : Button.Style.DEFAULT));
+        y += 24;
+        List<HatCatalog.Hat> hats = HatCatalog.all();
+        int cols = Math.max(1, w / 120);
+        int cw = (w - (cols - 1) * 8) / cols;
+        for (int i = 0; i < hats.size(); i++) {
+            HatCatalog.Hat h = hats.get(i);
+            int cx = x + (i % cols) * (cw + 8);
+            int cy = y + (i / cols) * 104;
+            content.add(new CosmeticCard(cx, cy, cw, 96, h.name(), h.description(), colorsOf(h), () -> cm.hatId().equals(h.id()), () -> { cm.setHat(h.id()); init(); }));
+        }
+        y += ((hats.size() + cols - 1) / cols) * 104 + 8;
+        content.setContentHeight(y + 8 - content.y);
+    }
+
+    private void buildEffects() {
+        CosmeticsManager cm = CosmeticsManager.get();
+        CosmeticsModule mod = ChaosClient.get().getModuleManager().get(CosmeticsModule.class);
+        int x = content.x + 8, w = content.w - 24, y = content.y + 4;
+        if (mod != null) {
+            var s = mod.categoryToggle("PARTICLES");
+            content.add(new Label(x, y + 4, w - 40, "Partikel-Effekte anzeigen", theme().text()));
+            content.add(new ToggleWidget(x + w - 30, y, s::isEnabled, s::set));
+            y += 24;
+        }
+        content.add(new Label(x, y, w, "EFFEKTE  §8· rein kosmetisch, clientseitig", theme().accentLight()));
+        y += 14;
+        content.add(new Button(x, y, 110, 16, cm.effectId().isEmpty() ? "Kein Effekt ✓" : "Kein Effekt", () -> { cm.setEffect(""); init(); }).style(cm.effectId().isEmpty() ? Button.Style.PRIMARY : Button.Style.DEFAULT));
+        y += 24;
+        List<EffectCatalog.Effect> effects = EffectCatalog.all();
+        int cols = Math.max(1, w / 120);
+        int cw = (w - (cols - 1) * 8) / cols;
+        for (int i = 0; i < effects.size(); i++) {
+            EffectCatalog.Effect e = effects.get(i);
+            int cx = x + (i % cols) * (cw + 8);
+            int cy = y + (i / cols) * 104;
+            content.add(new CosmeticCard(cx, cy, cw, 96, e.name(), e.description(), new int[]{e.color()}, () -> cm.effectId().equals(e.id()), () -> { cm.setEffect(e.id()); init(); }));
+        }
+        y += ((effects.size() + cols - 1) / cols) * 104 + 8;
+        content.setContentHeight(y + 8 - content.y);
+    }
+
+    private static int[] colorsOf(HatCatalog.Hat h) {
+        java.util.LinkedHashSet<Integer> set = new java.util.LinkedHashSet<>();
+        for (HatCatalog.Box b : h.boxes()) set.add(b.color());
+        int[] out = new int[set.size()];
+        int i = 0;
+        for (int c : set) out[i++] = c;
+        return out;
+    }
+
+    /* ---------- Karte für Hüte/Effekte ---------- */
+    private final class CosmeticCard extends Widget {
+        private final String name, desc;
+        private final int[] colors;
+        private final java.util.function.BooleanSupplier isActive;
+        private final Runnable apply;
+        CosmeticCard(int x, int y, int w, int h, String name, String desc, int[] colors, java.util.function.BooleanSupplier isActive, Runnable apply) {
+            super(x, y, w, h); this.name = name; this.desc = desc; this.colors = colors; this.isActive = isActive; this.apply = apply; tooltip(desc);
+        }
+
+        @Override
+        public void render(DrawContext ctx, int mx, int my, float delta) {
+            boolean active = isActive.getAsBoolean();
+            boolean hov = hovered(mx, my);
+            int r = theme().radius();
+            Draw.roundedRect(ctx, x, y, w, h, r, hov ? theme().bg3() : theme().bg2());
+            Draw.roundedBorder(ctx, x, y, w, h, r, active ? theme().accent() : theme().border());
+            // Farbfelder als Vorschau
+            int sw = Math.min(16, (w - 16) / Math.max(1, colors.length));
+            int total = sw * colors.length + (colors.length - 1) * 2;
+            int sx = x + (w - total) / 2;
+            for (int c : colors) {
+                Draw.shadow(ctx, sx, y + 12, sw, sw, 3, 80);
+                Draw.roundedRect(ctx, sx, y + 12, sw, sw, 3, c);
+                sx += sw + 2;
+            }
+            ctx.drawTextWithShadow(font(), Draw.trim(name, w - 10), x + (w - font().getWidth(Draw.trim(name, w - 10))) / 2, y + 40, theme().text());
+            String d = Draw.trim(desc, w - 10);
+            ctx.drawText(font(), d, x + (w - font().getWidth(d)) / 2, y + 52, theme().textDim(), false);
+            String badge = active ? "AKTIV" : hov ? "ANWENDEN" : "CHAOS";
+            int bw = font().getWidth(badge) + 12;
+            Draw.roundedRect(ctx, x + (w - bw) / 2, y + h - 22, bw, 14, 7, active ? theme().accent() : hov ? theme().accentDark() : theme().bg3());
+            ctx.drawTextWithShadow(font(), badge, x + (w - font().getWidth(badge)) / 2, y + h - 19, active || hov ? 0xFFFFFFFF : theme().textDim());
+        }
+
+        @Override
+        public boolean mouseClicked(double mx, double my, int button) {
+            if (!hovered(mx, my) || button != 0) return false;
+            playClick();
+            apply.run();
+            return true;
+        }
     }
 
     private void buildComing() {

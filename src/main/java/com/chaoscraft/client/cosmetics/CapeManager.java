@@ -97,6 +97,7 @@ public final class CapeManager {
         }
         if (!config.enabled) {
             ChaosClient.LOGGER.info("[ChaosCosmetics] deaktiviert (keine/abgeschaltete Konfiguration).");
+            CosmeticsManager.get().reload();
             return;
         }
         applyOwnCape(client);
@@ -106,9 +107,10 @@ public final class CapeManager {
             }
         }
         ChaosClient.LOGGER.info("[ChaosCosmetics] bereit: {} Cape(s) lokal, Bibliothek {}, API={}", capes.size(), config.library.size(), config.apiUrl.isEmpty() ? "aus" : "an");
+        CosmeticsManager.get().reload();
     }
 
-    private long exportedAt() {
+    public long exportedAt() {
         try {
             JsonObject o = GSON.fromJson(Files.readString(baseDir.resolve("config.json")), JsonObject.class);
             return o != null && o.has("exportedAt") ? o.get("exportedAt").getAsLong() : 0L;
@@ -139,17 +141,7 @@ public final class CapeManager {
         MinecraftClient client = MinecraftClient.getInstance();
         activeCapeId = id == null ? "" : id;
         applyOwnCape(client);
-        try {
-            JsonObject o = new JsonObject();
-            o.addProperty("activeCapeId", activeCapeId);
-            o.addProperty("ownerUuid", config.ownerUuid);
-            o.addProperty("stateAt", System.currentTimeMillis());
-            o.addProperty("exportedAt", exportedAt());
-            Files.createDirectories(baseDir);
-            Files.writeString(baseDir.resolve("ingame-state.json"), GSON.toJson(o));
-        } catch (IOException e) {
-            ChaosClient.LOGGER.warn("[ChaosCosmetics] ingame-state.json: {}", e.toString());
-        }
+        CosmeticsManager.get().writeState();
         ChaosClient.get().getNotifications().success(activeCapeId.isEmpty() ? "Cape deaktiviert." : "Dein Cape wurde aktiviert.");
     }
 

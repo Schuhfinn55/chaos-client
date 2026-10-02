@@ -82,6 +82,12 @@ public class ChaosClient implements ClientModInitializer {
         HudRenderer.init();
         ChaosCommands.register();
         CapeManager.get().init(MinecraftClient.getInstance());
+        com.chaoscraft.client.cosmetics.EffectTicker.register();
+        net.fabricmc.fabric.api.client.rendering.v1.LivingEntityFeatureRendererRegistrationCallback.EVENT.register((type, renderer, helper, ctx) -> {
+            if (renderer instanceof net.minecraft.client.render.entity.PlayerEntityRenderer<?> player) {
+                helper.register(new com.chaoscraft.client.cosmetics.HatFeatureRenderer(player));
+            }
+        });
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             moduleManager.tickAll();

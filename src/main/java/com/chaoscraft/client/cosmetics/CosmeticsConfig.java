@@ -25,6 +25,8 @@ import java.util.Map;
 public final class CosmeticsConfig {
 
     public record LibraryCape(String id, String name, String file, String sha1, String source) {}
+    /** Cosmetics eines anderen Spielers (Cape-Datei relativ zu chaos-cosmetics/, Hut-ID, Effekt-ID). */
+    public record PlayerCosmetics(String cape, String hat, String effect) {}
 
     private static final Gson GSON = new Gson();
 
@@ -41,7 +43,10 @@ public final class CosmeticsConfig {
     public String visibility = "everyone";
     public int version = 1;
     public final Map<String, String> players = new HashMap<>();
+    public final Map<String, PlayerCosmetics> playerCosmetics = new HashMap<>();
     public final List<LibraryCape> library = new ArrayList<>();
+    public String hatId = "";
+    public String effectId = "";
 
     public static CosmeticsConfig load(Path dir) {
         CosmeticsConfig cfg = new CosmeticsConfig();
@@ -59,6 +64,8 @@ public final class CosmeticsConfig {
             cfg.ownerUuid = normalizeUuid(getStr(root, "ownerUuid", ""));
             cfg.ownerName = getStr(root, "ownerName", "");
             cfg.visibility = getStr(root, "visibility", "everyone");
+            cfg.hatId = getStr(root, "hat", "");
+            cfg.effectId = getStr(root, "effect", "");
             if (root.has("activeCape") && root.get("activeCape").isJsonObject()) {
                 JsonObject ac = root.getAsJsonObject("activeCape");
                 cfg.activeCapeId = getStr(ac, "id", "");
@@ -68,8 +75,11 @@ public final class CosmeticsConfig {
             if (root.has("players") && root.get("players").isJsonObject()) {
                 for (Map.Entry<String, JsonElement> e : root.getAsJsonObject("players").entrySet()) {
                     if (e.getValue().isJsonObject()) {
-                        String cape = getStr(e.getValue().getAsJsonObject(), "cape", "");
-                        if (!cape.isEmpty()) cfg.players.put(normalizeUuid(e.getKey()), cape);
+                        JsonObject po = e.getValue().getAsJsonObject();
+                        String cape = getStr(po, "cape", "");
+                        String key = normalizeUuid(e.getKey());
+                        if (!cape.isEmpty()) cfg.players.put(key, cape);
+                        cfg.playerCosmetics.put(key, new PlayerCosmetics(cape, getStr(po, "hat", ""), getStr(po, "effect", "")));
                     }
                 }
             }

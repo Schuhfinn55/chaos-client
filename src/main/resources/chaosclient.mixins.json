@@ -11,6 +11,8 @@
     "InGameHudMixin",
     "MouseMixin",
     "OutlineMixin",
+    "PlayerEntityRenderStateMixin",
+    "PlayerEntityRendererMixin",
     "PlayerListEntryMixin",
     "PlayerListHudMixin",
     "ZoomMixin"
