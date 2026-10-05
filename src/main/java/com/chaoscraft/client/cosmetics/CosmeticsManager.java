@@ -27,16 +27,22 @@ public final class CosmeticsManager {
 
     private String hatId = "";
     private String effectId = "";
+    private String wingsId = "";
+    private final Map<String, String> playerWings = new HashMap<>();
+    private final Map<String, String> remoteWings = new java.util.concurrent.ConcurrentHashMap<>();
     private final Map<String, String> playerHats = new HashMap<>();
     private final Map<String, String> playerEffects = new HashMap<>();
     private final Map<String, String> remoteHats = new java.util.concurrent.ConcurrentHashMap<>();
     private final Map<String, String> remoteEffects = new java.util.concurrent.ConcurrentHashMap<>();
 
     /** Von der Cosmetics-API/aus dem Cache gemeldete Cosmetics eines anderen Spielers. */
-    public void setRemote(String uuidKey, String hat, String effect) {
-        String h = sanitize(hat), e = sanitize(effect);
+    public void setRemote(String uuidKey, String hat, String effect) { setRemote(uuidKey, hat, effect, ""); }
+
+    public void setRemote(String uuidKey, String hat, String effect, String wings) {
+        String h = sanitize(hat), e = sanitize(effect), w = sanitize(wings);
         if (h.isEmpty()) remoteHats.remove(uuidKey); else remoteHats.put(uuidKey, h);
         if (e.isEmpty()) remoteEffects.remove(uuidKey); else remoteEffects.put(uuidKey, e);
+        if (w.isEmpty()) remoteWings.remove(uuidKey); else remoteWings.put(uuidKey, w);
     }
 
     /** Ist der Spieler der eigene Account? */
@@ -52,11 +58,14 @@ public final class CosmeticsManager {
         CosmeticsConfig cfg = cm.config();
         hatId = sanitize(cfg.hatId);
         effectId = sanitize(cfg.effectId);
+        wingsId = sanitize(cfg.wingsId);
+        playerWings.clear();
         playerHats.clear();
         playerEffects.clear();
         for (Map.Entry<String, CosmeticsConfig.PlayerCosmetics> e : cfg.playerCosmetics.entrySet()) {
             if (!e.getValue().hat().isEmpty()) playerHats.put(e.getKey(), sanitize(e.getValue().hat()));
             if (!e.getValue().effect().isEmpty()) playerEffects.put(e.getKey(), sanitize(e.getValue().effect()));
+            if (!e.getValue().wings().isEmpty()) playerWings.put(e.getKey(), sanitize(e.getValue().wings()));
         }
         // Ingame-Zustand hat Vorrang, wenn neuer als der Export
         Path state = cm.baseDir().resolve("ingame-state.json");
@@ -66,6 +75,7 @@ public final class CosmeticsManager {
                 if (o != null && o.has("stateAt") && o.get("stateAt").getAsLong() > cm.exportedAt()) {
                     if (o.has("hatId")) hatId = sanitize(o.get("hatId").getAsString());
                     if (o.has("effectId")) effectId = sanitize(o.get("effectId").getAsString());
+                    if (o.has("wingsId")) wingsId = sanitize(o.get("wingsId").getAsString());
                 }
             } catch (Exception ignored) {}
         }
@@ -73,6 +83,23 @@ public final class CosmeticsManager {
 
     public String hatId() { return hatId; }
     public String effectId() { return effectId; }
+    public String wingsId() { return wingsId; }
+
+    public String wingsFor(UUID uuid) {
+        if (uuid == null) return null;
+        String key = uuid.toString().replace("-", "").toLowerCase(Locale.ROOT);
+        CosmeticsConfig cfg = CapeManager.get().config();
+        if (key.equals(cfg.ownerUuid)) return wingsId.isEmpty() ? null : wingsId;
+        String local = playerWings.get(key);
+        return local != null ? local : remoteWings.get(key);
+    }
+
+    public void setWings(String id) {
+        wingsId = sanitize(id);
+        writeState();
+        WingsCatalog.Wings w = WingsCatalog.byId(wingsId);
+        ChaosClient.get().getNotifications().success(w == null ? "Wings abgelegt." : w.name() + " angelegt.");
+    }
 
     /** Hut-ID eines Spielers (eigener Account oder bekannter Chaos-Spieler), sonst null. */
     public String hatFor(UUID uuid) {
@@ -115,6 +142,7 @@ public final class CosmeticsManager {
             o.addProperty("activeCapeId", cm.activeCapeId());
             o.addProperty("hatId", hatId);
             o.addProperty("effectId", effectId);
+            o.addProperty("wingsId", wingsId);
             o.addProperty("ownerUuid", cm.config().ownerUuid);
             o.addProperty("stateAt", System.currentTimeMillis());
             o.addProperty("exportedAt", cm.exportedAt());

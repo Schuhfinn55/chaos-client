@@ -5,6 +5,7 @@ import com.chaoscraft.client.cosmetics.CapeManager;
 import com.chaoscraft.client.cosmetics.CosmeticsManager;
 import com.chaoscraft.client.cosmetics.EffectCatalog;
 import com.chaoscraft.client.cosmetics.HatCatalog;
+import com.chaoscraft.client.cosmetics.WingsCatalog;
 import com.chaoscraft.client.cosmetics.CosmeticsConfig;
 import com.chaoscraft.client.emotes.EmoteManager;
 import com.chaoscraft.client.modules.cosmetics.CosmeticsModule;
@@ -55,7 +56,7 @@ public class CosmeticsScreen extends ChaosScreen {
         for (int i = 0; i < tabs.length; i++) {
             final Tab t = tabs[i];
             Button b = new Button(tx, ty, 112, 20, names[i], () -> { tab = t; init(); }).style(Button.Style.GHOST).active(tab == t);
-            if (t == Tab.WINGS || t == Tab.BACK) b.tooltip("Folgt mit einem Chaos-Client-Update über die Cosmetics-API.");
+            if (t == Tab.BACK) b.tooltip("Folgt mit einem Chaos-Client-Update über die Cosmetics-API.");
             add(b);
             ty += 24;
         }
@@ -64,6 +65,7 @@ public class CosmeticsScreen extends ChaosScreen {
             case CAPES -> buildCapes();
             case EMOTES -> buildEmotes();
             case HATS -> buildHats();
+            case WINGS -> buildWings();
             case PARTICLES -> buildEffects();
             default -> buildComing();
         }
@@ -155,6 +157,38 @@ public class CosmeticsScreen extends ChaosScreen {
             content.add(new CosmeticCard(cx, cy, cw, 96, h.name(), h.description(), colorsOf(h), () -> cm.hatId().equals(h.id()), () -> { cm.setHat(h.id()); init(); }));
         }
         y += ((hats.size() + cols - 1) / cols) * 104 + 8;
+        content.setContentHeight(y + 8 - content.y);
+    }
+
+    private void buildWings() {
+        CosmeticsManager cm = CosmeticsManager.get();
+        CosmeticsModule mod = ChaosClient.get().getModuleManager().get(CosmeticsModule.class);
+        int x = content.x + 8, w = content.w - 24, y = content.y + 4;
+        if (mod != null) {
+            var s = mod.categoryToggle("WINGS");
+            content.add(new Label(x, y + 4, w - 40, "Wings anzeigen", theme().text()));
+            content.add(new ToggleWidget(x + w - 30, y, s::isEnabled, s::set));
+            y += 24;
+        }
+        content.add(new Label(x, y, w, "WINGS  §8· animierte Flügel am Rücken, für alle Chaos-Spieler sichtbar", theme().accentLight()));
+        y += 14;
+        content.add(new Button(x, y, 110, 16, cm.wingsId().isEmpty() ? "Keine Wings ✓" : "Keine Wings", () -> { cm.setWings(""); init(); }).style(cm.wingsId().isEmpty() ? Button.Style.PRIMARY : Button.Style.DEFAULT));
+        y += 24;
+        List<WingsCatalog.Wings> list = WingsCatalog.all();
+        int cols = Math.max(1, w / 120);
+        int cw = (w - (cols - 1) * 8) / cols;
+        for (int i = 0; i < list.size(); i++) {
+            WingsCatalog.Wings wg = list.get(i);
+            int cx = x + (i % cols) * (cw + 8);
+            int cy = y + (i / cols) * 104;
+            java.util.LinkedHashSet<Integer> set = new java.util.LinkedHashSet<>();
+            for (int c : wg.colors()) set.add(c | 0xFF000000);
+            int[] colors = new int[Math.min(6, set.size())];
+            int k = 0;
+            for (int c : set) { if (k >= colors.length) break; colors[k++] = c; }
+            content.add(new CosmeticCard(cx, cy, cw, 96, wg.icon() + " " + wg.name(), wg.description(), colors, () -> cm.wingsId().equals(wg.id()), () -> { cm.setWings(wg.id()); init(); }));
+        }
+        y += ((list.size() + cols - 1) / cols) * 104 + 8;
         content.setContentHeight(y + 8 - content.y);
     }
 

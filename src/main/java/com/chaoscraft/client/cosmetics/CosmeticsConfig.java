@@ -26,7 +26,7 @@ public final class CosmeticsConfig {
 
     public record LibraryCape(String id, String name, String file, String sha1, String source) {}
     /** Cosmetics eines anderen Spielers (Cape-Datei relativ zu chaos-cosmetics/, Hut-ID, Effekt-ID). */
-    public record PlayerCosmetics(String cape, String hat, String effect) {}
+    public record PlayerCosmetics(String cape, String hat, String effect, String wings) {}
 
     private static final Gson GSON = new Gson();
 
@@ -48,6 +48,7 @@ public final class CosmeticsConfig {
     public final List<LibraryCape> library = new ArrayList<>();
     public String hatId = "";
     public String effectId = "";
+    public String wingsId = "";
 
     public static CosmeticsConfig load(Path dir) {
         CosmeticsConfig cfg = new CosmeticsConfig();
@@ -68,6 +69,7 @@ public final class CosmeticsConfig {
             cfg.visibility = getStr(root, "visibility", "everyone");
             cfg.hatId = getStr(root, "hat", "");
             cfg.effectId = getStr(root, "effect", "");
+            cfg.wingsId = getStr(root, "wings", "");
             if (root.has("activeCape") && root.get("activeCape").isJsonObject()) {
                 JsonObject ac = root.getAsJsonObject("activeCape");
                 cfg.activeCapeId = getStr(ac, "id", "");
@@ -81,7 +83,7 @@ public final class CosmeticsConfig {
                         String cape = getStr(po, "cape", "");
                         String key = normalizeUuid(e.getKey());
                         if (!cape.isEmpty()) cfg.players.put(key, cape);
-                        cfg.playerCosmetics.put(key, new PlayerCosmetics(cape, getStr(po, "hat", ""), getStr(po, "effect", "")));
+                        cfg.playerCosmetics.put(key, new PlayerCosmetics(cape, getStr(po, "hat", ""), getStr(po, "effect", ""), getStr(po, "wings", "")));
                     }
                 }
             }

@@ -32,11 +32,20 @@ public final class EffectTicker {
         ChaosClient cc = ChaosClient.get();
         if (cc == null) return;
         CosmeticsModule mod = cc.getModuleManager().get(CosmeticsModule.class);
-        if (mod != null && !mod.categoryToggle("PARTICLES").isEnabled()) return;
+        boolean particlesOn = mod == null || mod.categoryToggle("PARTICLES").isEnabled();
         CosmeticsManager cm = CosmeticsManager.get();
         for (AbstractClientPlayerEntity p : mc.world.getPlayers()) {
             if (p.isInvisible() || p.isSpectator() || p.squaredDistanceTo(mc.player) > 48 * 48) continue;
             boolean own = cm.isOwner(p.getUuid());
+            // Wings-Partikel (Phönix-Funken, Feen-Glitzer …)
+            String wid = cm.wingsFor(p.getUuid());
+            if (wid != null && (mod == null || mod.categoryToggle("WINGS").isEnabled()) && !(mod != null && ((own && !mod.showOwn().isEnabled()) || (!own && !mod.showOthers().isEnabled())))) {
+                WingsCatalog.Wings w = WingsCatalog.byId(wid);
+                if (w != null && !w.particle().isEmpty() && tick % 3 == 0) {
+                    try { spawnWingParticle(mc, p, w.particle()); } catch (Exception ignored) {}
+                }
+            }
+            if (!particlesOn) continue;
             if (mod != null && ((own && !mod.showOwn().isEnabled()) || (!own && !mod.showOthers().isEnabled()))) continue;
             String id = cm.effectFor(p.getUuid());
             if (id == null) continue;
@@ -102,6 +111,27 @@ public final class EffectTicker {
     }
 
     private static double off(double r) { return (RNG.nextDouble() - 0.5) * 2 * r; }
+
+    /** Partikel hinter dem Spieler auf Flügelhöhe, links und rechts. */
+    private static void spawnWingParticle(MinecraftClient mc, AbstractClientPlayerEntity p, String kind) {
+        double yaw = Math.toRadians(p.getBodyYaw());
+        double bx = -Math.sin(yaw), bz = Math.cos(yaw); // Blickrichtung (xz)
+        double sideX = Math.cos(yaw), sideZ = Math.sin(yaw);
+        for (int s = -1; s <= 1; s += 2) {
+            double spread = 0.55 + RNG.nextDouble() * 0.45;
+            double x = p.getX() - bx * 0.35 + sideX * s * spread, z = p.getZ() - bz * 0.35 + sideZ * s * spread;
+            double y = p.getY() + 1.0 + RNG.nextDouble() * 0.6;
+            ParticleEffect pe = switch (kind) {
+                case "flame" -> ParticleTypes.FLAME;
+                case "end_rod" -> ParticleTypes.END_ROD;
+                case "snowflake" -> ParticleTypes.SNOWFLAKE;
+                case "smoke" -> ParticleTypes.SMOKE;
+                case "dust_red" -> new DustParticleEffect(0xE11D2E, 0.8f);
+                default -> null;
+            };
+            if (pe != null) add(mc, pe, x, y, z, -bx * 0.02, 0.01, -bz * 0.02);
+        }
+    }
 
     private static void add(MinecraftClient mc, ParticleEffect type, double x, double y, double z, double vx, double vy, double vz) {
         if (mc.world != null) mc.world.addParticleClient(type, x, y, z, vx, vy, vz);

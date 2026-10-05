@@ -241,7 +241,7 @@ public final class CapeManager {
             try {
                 if (Files.exists(meta)) {
                     JsonObject m = GSON.fromJson(Files.readString(meta), JsonObject.class);
-                    if (m != null) CosmeticsManager.get().setRemote(uuidKey, m.has("hat") ? m.get("hat").getAsString() : "", m.has("effect") ? m.get("effect").getAsString() : "");
+                    if (m != null) CosmeticsManager.get().setRemote(uuidKey, m.has("hat") ? m.get("hat").getAsString() : "", m.has("effect") ? m.get("effect").getAsString() : "", m.has("wings") ? m.get("wings").getAsString() : "");
                 }
             } catch (Exception ignored) {}
             if (config.apiUrl.isEmpty()) { useCacheOrGiveUp(client, uuidKey, cached); return; }
@@ -258,13 +258,15 @@ public final class CapeManager {
             if ("none".equals(vis)) { CosmeticsManager.get().setRemote(uuidKey, "", ""); negative.add(uuidKey); pending.remove(uuidKey); return; }
             String rHat = body.has("hat") && !body.get("hat").isJsonNull() ? body.get("hat").getAsString() : "";
             String rEffect = body.has("effect") && !body.get("effect").isJsonNull() ? body.get("effect").getAsString() : "";
-            CosmeticsManager.get().setRemote(uuidKey, rHat, rEffect);
+            String rWings = body.has("wings") && !body.get("wings").isJsonNull() ? body.get("wings").getAsString() : "";
+            CosmeticsManager.get().setRemote(uuidKey, rHat, rEffect, rWings);
             try {
                 Files.createDirectories(cached.getParent());
                 JsonObject m0 = Files.exists(meta) ? GSON.fromJson(Files.readString(meta), JsonObject.class) : new JsonObject();
                 if (m0 == null) m0 = new JsonObject();
                 m0.addProperty("hat", rHat);
                 m0.addProperty("effect", rEffect);
+                m0.addProperty("wings", rWings);
                 Files.writeString(meta, GSON.toJson(m0));
             } catch (Exception ignored) {}
             if (!body.has("activeCape") || !body.get("activeCape").isJsonObject()) { negative.add(uuidKey); pending.remove(uuidKey); return; }
@@ -282,6 +284,7 @@ public final class CapeManager {
             m.addProperty("sha1", sha1);
             m.addProperty("hat", rHat);
             m.addProperty("effect", rEffect);
+            m.addProperty("wings", rWings);
             m.addProperty("cachedAt", System.currentTimeMillis());
             Files.writeString(meta, GSON.toJson(m));
             registerBytes(client, uuidKey, png.body(), "api");
