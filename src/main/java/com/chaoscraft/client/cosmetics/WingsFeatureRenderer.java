@@ -35,7 +35,8 @@ import java.util.UUID;
  */
 public final class WingsFeatureRenderer extends FeatureRenderer<PlayerEntityRenderState, PlayerEntityModel> {
 
-    private static ModelPart left, right;
+    /** Flügelteile pro Spieler (Winkel werden erst beim Rendern gelesen – deshalb nicht teilen). */
+    private static final java.util.Map<UUID, ModelPart[]> PARTS = new java.util.HashMap<>();
 
     public WingsFeatureRenderer(FeatureRendererContext<PlayerEntityRenderState, PlayerEntityModel> ctx) {
         super(ctx);
@@ -69,7 +70,8 @@ public final class WingsFeatureRenderer extends FeatureRenderer<PlayerEntityRend
         WingsCatalog.Wings w = WingsCatalog.byId(id);
         if (w == null) return;
         try {
-            if (left == null) { left = build(true); right = build(false); }
+            ModelPart[] parts = PARTS.computeIfAbsent(uuid, k -> new ModelPart[]{build(true), build(false)});
+            if (PARTS.size() > 64) { ModelPart[] keep = parts; PARTS.clear(); PARTS.put(uuid, keep); }
             float t = state.age;
             boolean moving = state.limbSwingAmplitude > 0.15f;
             boolean gliding = state.glidingTicks > 0f || state.applyFlyingRotation;
@@ -80,11 +82,14 @@ public final class WingsFeatureRenderer extends FeatureRenderer<PlayerEntityRend
             float flap = MathHelper.sin(phase);
             // Hauptschlag = Heben/Senken der Spitzen (Roll) – bleibt von hinten immer gut sichtbar;
             // Auf-/Zuklappen (Yaw) nur dezent, damit der Flügel nie zum Strich wird.
-            float open = w.openAngle() * 0.75f + flap * amp * 0.3f + (gliding ? 18f : 0f) + (sneaking ? -12f : 0f) + (moving ? 4f : 0f);
-            open = MathHelper.clamp(open, 10f, 60f);
-            float tilt = w.tilt() + flap * amp * 0.6f + (gliding ? 12f : 0f) - (sneaking ? 6f : 0f);
-            float pitch = (sneaking ? 12f : (gliding ? -8f : 0f)) + MathHelper.sin(phase - 0.4f) * 3f;
-            float breathe = MathHelper.sin(t * 0.045f) * 1.5f;
+            // Ruhig und flach wie bei klassischen Client-Wings: aufgespannt hinter dem Rücken,
+            // leichtes Heben/Senken (±~7°), kaum Auf-/Zuklappen (20–35°). Keine steilen Winkel.
+            float open = w.openAngle() * 0.6f + flap * amp * 0.25f + (gliding ? 15f : 0f) + (sneaking ? -8f : 0f) + (moving ? 3f : 0f);
+            open = MathHelper.clamp(open, 10f, 50f);
+            float tilt = w.tilt() * 0.6f + flap * amp * 0.35f + (gliding ? 8f : 0f) - (sneaking ? 4f : 0f);
+            tilt = MathHelper.clamp(tilt, -8f, 24f);
+            float pitch = sneaking ? 10f : (gliding ? -6f : 0f);
+            float breathe = MathHelper.sin(t * 0.045f) * 1.0f;
 
             RenderLayer layer = w.glow() ? RenderLayers.entityTranslucentEmissive(w.texture()) : RenderLayers.entityTranslucent(w.texture());
             int lit = w.glow() ? 0x00F000F0 : light;
@@ -94,7 +99,7 @@ public final class WingsFeatureRenderer extends FeatureRenderer<PlayerEntityRend
             for (int side = 0; side < 2; side++) {
                 boolean isLeft = side == 0;
                 float sx = isLeft ? 1f : -1f;
-                ModelPart p = isLeft ? left : right;
+                ModelPart p = parts[isLeft ? 0 : 1];
                 p.originX = sx * WingsCatalog.rootX();
                 p.originY = WingsCatalog.rootY();
                 p.originZ = WingsCatalog.rootZ();
