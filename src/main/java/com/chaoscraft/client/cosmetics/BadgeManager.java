@@ -27,9 +27,13 @@ public final class BadgeManager {
 
     private static final Style BADGE_STYLE = Style.EMPTY.withFont(new StyleSpriteSource.Font(FONT)).withColor(0xFFFFFF).withItalic(false).withBold(false);
 
-    /** Badge-Text (Icon + Leerzeichen) in Vanilla-Schrift danach. */
+    /**
+     * Badge-Text (Icon + Leerzeichen). Wurzel ist ein leerer Text, damit angehängte
+     * Geschwister (der Name) NICHT die Badge-Schrift erben – sonst würde jeder
+     * Buchstabe als fehlendes Glyph-Kästchen gezeichnet.
+     */
     public static MutableText badge(String glyph) {
-        return Text.literal(glyph).setStyle(BADGE_STYLE).append(Text.literal(" ").setStyle(Style.EMPTY));
+        return Text.empty().append(Text.literal(glyph).setStyle(BADGE_STYLE)).append(Text.literal(" "));
     }
 
     /** Ob dieser Spieler den Chaos Client nutzt (eigener Account oder in der Cosmetics-API bekannt). */
