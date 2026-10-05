@@ -2,14 +2,18 @@ package com.chaoscraft.client.music;
 
 import com.chaoscraft.client.ChaosClient;
 import com.chaoscraft.client.config.SharedData;
+import javazoom.jl.decoder.Bitstream;
+import javazoom.jl.decoder.Decoder;
+import javazoom.jl.decoder.Header;
+import javazoom.jl.decoder.SampleBuffer;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.sound.OggAudioStream;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.FloatControl;
 import javax.sound.sampled.SourceDataLine;
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
@@ -17,12 +21,17 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 /**
- * Ingame-Music-Player: spielt WAV (javax.sound) und OGG (Minecraft-Decoder)
- * aus dem Chaos-Musikordner (Launcher-Export) oder {@code <gamedir>/chaos-client/music}.
- * MP3 wird vom JDK nicht dekodiert und daher nicht unterstützt.
+ * Ingame-Music-Player: spielt MP3 (JLayer), WAV (javax.sound) und OGG
+ * (Minecraft-Decoder) aus dem Chaos-Musikordner (Launcher-Export) oder
+ * {@code <gamedir>/chaos-client/music}.
+ *
+ * Lautstärke wird in Software auf die PCM-Daten angewendet (16-bit, little
+ * endian) – funktioniert damit unabhängig davon, ob die Audio-Leitung einen
+ * MASTER_GAIN-Regler anbietet.
  */
 public final class MusicPlayer {
 
@@ -37,6 +46,7 @@ public final class MusicPlayer {
     private volatile boolean shuffle;
     private Thread thread;
     private volatile SourceDataLine line;
+    private volatile Consumer<Float> volumeListener;
 
     public List<Track> playlist() { return playlist; }
     public Track current() { return index >= 0 && index < playlist.size() ? playlist.get(index) : null; }
@@ -47,6 +57,8 @@ public final class MusicPlayer {
     public boolean shuffle() { return shuffle; }
     public void setRepeat(boolean r) { repeat = r; }
     public void setShuffle(boolean s) { shuffle = s; }
+    /** Wird bei jeder Lautstärkeänderung aufgerufen (z.B. zum Speichern in der Modul-Einstellung). */
+    public void setVolumeListener(Consumer<Float> l) { volumeListener = l; }
 
     public List<Path> dirs() {
         List<Path> out = new ArrayList<>();
@@ -58,15 +70,17 @@ public final class MusicPlayer {
         return out;
     }
 
+    public static boolean isSupported(String fileName) {
+        String n = fileName.toLowerCase(Locale.ROOT);
+        return n.endsWith(".mp3") || n.endsWith(".wav") || n.endsWith(".ogg");
+    }
+
     public void scan() {
         playlist.clear();
         for (Path dir : dirs()) {
             if (!Files.isDirectory(dir)) continue;
             try (Stream<Path> s = Files.list(dir)) {
-                s.filter(p -> {
-                    String n = p.toString().toLowerCase(Locale.ROOT);
-                    return n.endsWith(".wav") || n.endsWith(".ogg");
-                }).sorted().forEach(p -> {
+                s.filter(p -> isSupported(p.toString())).sorted().forEach(p -> {
                     String n = p.getFileName().toString();
                     playlist.add(new Track(p, n.substring(0, n.lastIndexOf('.'))));
                 });
@@ -75,22 +89,23 @@ public final class MusicPlayer {
         if (index >= playlist.size()) index = -1;
     }
 
+    /** Lautstärke 0..1 setzen (ohne Listener-Aufruf, z.B. beim Laden der Einstellung). */
+    public void setVolumeSilently(float v) { volume = Math.max(0f, Math.min(1f, v)); }
+
     public void setVolume(float v) {
         volume = Math.max(0f, Math.min(1f, v));
-        applyVolume();
+        Consumer<Float> l = volumeListener;
+        if (l != null) l.accept(volume);
     }
 
-    private void applyVolume() {
-        SourceDataLine l = line;
-        if (l != null && l.isControlSupported(FloatControl.Type.MASTER_GAIN)) {
-            FloatControl c = (FloatControl) l.getControl(FloatControl.Type.MASTER_GAIN);
-            float db = volume <= 0.001f ? c.getMinimum() : (float) (20 * Math.log10(volume));
-            c.setValue(Math.max(c.getMinimum(), Math.min(c.getMaximum(), db)));
-        }
+    /** Lautstärke um Schritt ändern (z.B. ±0.05) und kurz anzeigen. */
+    public void adjustVolume(float delta) {
+        setVolume(volume + delta);
+        ChaosClient.get().getNotifications().info("🔊 Lautstärke " + Math.round(volume * 100) + "%");
     }
 
     public void play(int i) {
-        if (playlist.isEmpty()) { scan(); if (playlist.isEmpty()) { ChaosClient.get().getNotifications().warn("Keine Musik gefunden (WAV/OGG in chaos-client/music)."); return; } }
+        if (playlist.isEmpty()) { scan(); if (playlist.isEmpty()) { ChaosClient.get().getNotifications().warn("Keine Musik gefunden (MP3/WAV/OGG in chaos-client/music oder im Launcher-Musikordner)."); return; } }
         stop();
         index = Math.floorMod(i, playlist.size());
         Track t = playlist.get(index);
@@ -124,6 +139,7 @@ public final class MusicPlayer {
         String name = t.file().toString().toLowerCase(Locale.ROOT);
         try {
             if (name.endsWith(".ogg")) streamOgg(t.file());
+            else if (name.endsWith(".mp3")) streamMp3(t.file());
             else streamWav(t.file());
             if (playing && !Thread.currentThread().isInterrupted()) {
                 playing = false;
@@ -148,7 +164,7 @@ public final class MusicPlayer {
                 int n;
                 while (playing && (n = dec.read(buf)) > 0) {
                     waitWhilePaused();
-                    line.write(buf, 0, n);
+                    write(buf, n);
                 }
                 drainAndClose();
             }
@@ -165,7 +181,40 @@ public final class MusicPlayer {
                 if (bb == null || bb.remaining() == 0) break;
                 byte[] buf = new byte[bb.remaining()];
                 bb.get(buf);
-                line.write(buf, 0, buf.length);
+                write(buf, buf.length);
+            }
+            drainAndClose();
+        }
+    }
+
+    /** MP3 über JLayer dekodieren (Frame für Frame → 16-bit PCM). */
+    private void streamMp3(Path file) throws Exception {
+        try (BufferedInputStream in = new BufferedInputStream(Files.newInputStream(file), 64 * 1024)) {
+            Bitstream bs = new Bitstream(in);
+            Decoder dec = new Decoder();
+            byte[] out = new byte[4608 * 2];
+            try {
+                while (playing) {
+                    waitWhilePaused();
+                    Header h = bs.readFrame();
+                    if (h == null) break;
+                    SampleBuffer sb = (SampleBuffer) dec.decodeFrame(h, bs);
+                    if (line == null) {
+                        AudioFormat fmt = new AudioFormat(dec.getOutputFrequency(), 16, dec.getOutputChannels(), true, false);
+                        openLine(fmt);
+                    }
+                    short[] pcm = sb.getBuffer();
+                    int len = sb.getBufferLength();
+                    if (out.length < len * 2) out = new byte[len * 2];
+                    for (int i = 0; i < len; i++) {
+                        out[i * 2] = (byte) (pcm[i] & 0xFF);
+                        out[i * 2 + 1] = (byte) ((pcm[i] >> 8) & 0xFF);
+                    }
+                    write(out, len * 2);
+                    bs.closeFrame();
+                }
+            } finally {
+                try { bs.close(); } catch (Exception ignored) {}
             }
             drainAndClose();
         }
@@ -176,7 +225,23 @@ public final class MusicPlayer {
         l.open(fmt);
         l.start();
         line = l;
-        applyVolume();
+    }
+
+    /** Schreibt 16-bit-LE-PCM mit Software-Lautstärke auf die Leitung. */
+    private void write(byte[] buf, int n) {
+        SourceDataLine l = line;
+        if (l == null) return;
+        float v = volume;
+        if (v < 0.999f) {
+            float g = v * v; // wahrnehmungsnäher als linear
+            for (int i = 0; i + 1 < n; i += 2) {
+                int s = (short) ((buf[i] & 0xFF) | (buf[i + 1] << 8));
+                s = Math.round(s * g);
+                buf[i] = (byte) (s & 0xFF);
+                buf[i + 1] = (byte) ((s >> 8) & 0xFF);
+            }
+        }
+        l.write(buf, 0, n);
     }
 
     private void waitWhilePaused() throws InterruptedException {

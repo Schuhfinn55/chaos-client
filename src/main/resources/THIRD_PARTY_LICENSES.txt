@@ -14,6 +14,8 @@ werden eingehalten:
   LWJGL 3 / GLFW ........... BSD-3-Clause / zlib ... https://www.lwjgl.org
   JOML ..................... MIT .......... https://github.com/JOML-CI/JOML
   Brigadier ................ MIT .......... https://github.com/Mojang/brigadier
+  JLayer (MP3-Decoder) ..... LGPL-2.1 ..... http://www.javazoom.net/javalayer/javalayer.html
+                              (unverändert als eigene Bibliothek mitgeliefert; LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html)
 
 Apache License 2.0: https://www.apache.org/licenses/LICENSE-2.0
 MIT License:        https://opensource.org/licenses/MIT

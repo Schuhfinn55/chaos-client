@@ -37,7 +37,7 @@ public class ChaosClient implements ClientModInitializer {
 
     public static final String MOD_ID = "chaosclient";
     public static final String NAME = "Chaos Client";
-    public static final String VERSION = "2.3.3";
+    public static final String VERSION = "2.4.0";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
     private static ChaosClient instance;
