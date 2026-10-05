@@ -210,8 +210,13 @@ public final class CapeManager {
     }
 
     /** Cape-Textur für einen Spieler oder null (→ Vanilla-Verhalten). */
+    private volatile long lastNegativeReset = System.currentTimeMillis();
+
     public Identifier capeFor(UUID uuid) {
         if (uuid == null || !isEnabled() || !config.showCapes) return null;
+        // Spieler, die (noch) nicht in der API waren, alle 2 Minuten erneut prüfen – z.B. wenn sie gerade erst synchronisiert haben
+        long nowMs = System.currentTimeMillis();
+        if (nowMs - lastNegativeReset > 120_000L) { lastNegativeReset = nowMs; negative.clear(); }
         String key = CosmeticsConfig.normalizeUuid(uuid.toString());
         boolean own = key.equals(config.ownerUuid);
         if (own && !showOwn) return null;
