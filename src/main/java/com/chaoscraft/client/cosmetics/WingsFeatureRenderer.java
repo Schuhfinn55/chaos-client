@@ -17,7 +17,10 @@ import net.minecraft.client.render.entity.model.PlayerEntityModel;
 import net.minecraft.client.render.entity.state.PlayerEntityRenderState;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.EntityPose;
+import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.MathHelper;
+
+import java.util.Set;
 
 import java.util.UUID;
 
@@ -42,7 +45,8 @@ public final class WingsFeatureRenderer extends FeatureRenderer<PlayerEntityRend
         float w = WingsCatalog.planeW(), h = WingsCatalog.planeH(), top = WingsCatalog.planeTop();
         ModelData data = new ModelData();
         data.getRoot().addChild("wing",
-            ModelPartBuilder.create().uv(0, 0).mirrored(!isLeft).cuboid(isLeft ? 0f : -w, -top, 0f, w, h, 0f),
+            // Nur eine Fläche (Nordseite): beidseitig sichtbar, kein Z-Fighting zwischen Vorder- und Rückseite
+            ModelPartBuilder.create().uv(0, 0).mirrored(!isLeft).cuboid(isLeft ? 0f : -w, -top, 0f, w, h, 0f, Set.of(Direction.NORTH)),
             ModelTransform.NONE);
         return TexturedModelData.of(data, WingsCatalog.texW(), WingsCatalog.texH()).createModel().getChild("wing");
     }
@@ -70,14 +74,16 @@ public final class WingsFeatureRenderer extends FeatureRenderer<PlayerEntityRend
             boolean moving = state.limbSwingAmplitude > 0.15f;
             boolean gliding = state.glidingTicks > 0f || state.applyFlyingRotation;
             boolean sneaking = state.isInPose(EntityPose.CROUCHING);
-            float speed = w.flapSpeed() * (gliding ? 2.0f : moving ? 1.7f : 1f);
-            float amp = w.flapAmp() * (gliding ? 1.4f : moving ? 1.15f : 1f);
+            float speed = w.flapSpeed() * (gliding ? 1.8f : moving ? 1.5f : 0.8f);
+            float amp = w.flapAmp() * (gliding ? 1.3f : moving ? 1.1f : 1f);
             float phase = t * speed;
-            float flap = MathHelper.sin(phase) * amp;
-            float open = w.openAngle() + flap + (gliding ? 22f : 0f) + (sneaking ? -18f : 0f) + (moving ? 6f : 0f);
-            open = MathHelper.clamp(open, 8f, 88f);
-            float tilt = w.tilt() + MathHelper.sin(phase - 0.5f) * 4f + (gliding ? 10f : 0f) - (sneaking ? 6f : 0f);
-            float pitch = sneaking ? 14f : (gliding ? -8f : 0f);
+            float flap = MathHelper.sin(phase);
+            // Hauptschlag = Heben/Senken der Spitzen (Roll) – bleibt von hinten immer gut sichtbar;
+            // Auf-/Zuklappen (Yaw) nur dezent, damit der Flügel nie zum Strich wird.
+            float open = w.openAngle() * 0.75f + flap * amp * 0.3f + (gliding ? 18f : 0f) + (sneaking ? -12f : 0f) + (moving ? 4f : 0f);
+            open = MathHelper.clamp(open, 10f, 60f);
+            float tilt = w.tilt() + flap * amp * 0.6f + (gliding ? 12f : 0f) - (sneaking ? 6f : 0f);
+            float pitch = (sneaking ? 12f : (gliding ? -8f : 0f)) + MathHelper.sin(phase - 0.4f) * 3f;
             float breathe = MathHelper.sin(t * 0.045f) * 1.5f;
 
             RenderLayer layer = w.glow() ? RenderLayers.entityTranslucentEmissive(w.texture()) : RenderLayers.entityTranslucent(w.texture());
