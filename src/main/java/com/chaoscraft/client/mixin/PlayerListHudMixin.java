@@ -9,8 +9,10 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import net.minecraft.text.Text;
 
-/** Tablist: Ping als farbige Zahl statt Balken. */
+/** Tablist: Ping als farbige Zahl statt Balken; Chaos-Badge vor Namen von Chaos-Spielern. */
 @Mixin(PlayerListHud.class)
 public class PlayerListHudMixin {
     @Inject(method = "renderLatencyIcon", at = @At("HEAD"), cancellable = true)
@@ -19,5 +21,14 @@ public class PlayerListHudMixin {
         if (cc == null) return;
         TablistModule m = cc.getModuleManager().get(TablistModule.class);
         if (m != null && m.renderLatency(ctx, width, x, y, entry)) ci.cancel();
+    }
+
+    @Inject(method = "getPlayerName", at = @At("RETURN"), cancellable = true)
+    private void chaosclient$badge(PlayerListEntry entry, CallbackInfoReturnable<Text> cir) {
+        try {
+            Text t = cir.getReturnValue();
+            Text d = com.chaoscraft.client.cosmetics.BadgeManager.decorate(entry.getProfile().id(), t);
+            if (d != t) cir.setReturnValue(d);
+        } catch (Exception ignored) {}
     }
 }

@@ -30,6 +30,17 @@ public final class CosmeticsManager {
     private String wingsId = "";
     private final Map<String, String> playerWings = new HashMap<>();
     private final Map<String, String> remoteWings = new java.util.concurrent.ConcurrentHashMap<>();
+    /** Spieler, die in der Cosmetics-API bekannt sind (= nutzen den Chaos Launcher/Client). */
+    private final java.util.Set<String> chaosPlayers = java.util.concurrent.ConcurrentHashMap.newKeySet();
+
+    public void markChaos(String uuidKey) { if (uuidKey != null && !uuidKey.isEmpty()) chaosPlayers.add(uuidKey); }
+
+    public boolean isChaosPlayer(UUID uuid) {
+        if (uuid == null) return false;
+        String key = uuid.toString().replace("-", "").toLowerCase(Locale.ROOT);
+        return chaosPlayers.contains(key) || playerHats.containsKey(key) || playerWings.containsKey(key) || playerEffects.containsKey(key)
+            || CapeManager.get().config().players.containsKey(key);
+    }
     private final Map<String, String> playerHats = new HashMap<>();
     private final Map<String, String> playerEffects = new HashMap<>();
     private final Map<String, String> remoteHats = new java.util.concurrent.ConcurrentHashMap<>();

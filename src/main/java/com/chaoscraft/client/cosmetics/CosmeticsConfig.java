@@ -24,7 +24,7 @@ import java.util.Map;
  */
 public final class CosmeticsConfig {
 
-    public record LibraryCape(String id, String name, String file, String sha1, String source) {}
+    public record LibraryCape(String id, String name, String file, String sha1, String source, int fps) {}
     /** Cosmetics eines anderen Spielers (Cape-Datei relativ zu chaos-cosmetics/, Hut-ID, Effekt-ID). */
     public record PlayerCosmetics(String cape, String hat, String effect, String wings) {}
 
@@ -41,6 +41,9 @@ public final class CosmeticsConfig {
     public String activeCapeId = "";
     public String ownCapeFile = null;
     public String ownCapeSha1 = "";
+    /** Bilder pro Sekunde des eigenen Capes (animierte Capes = Frame-Streifen). */
+    public int ownCapeFps = 8;
+    public final Map<String, Integer> playerFps = new HashMap<>();
     public String visibility = "everyone";
     public int version = 1;
     public final Map<String, String> players = new HashMap<>();
@@ -75,6 +78,7 @@ public final class CosmeticsConfig {
                 cfg.activeCapeId = getStr(ac, "id", "");
                 cfg.ownCapeFile = getStr(ac, "file", "cape.png");
                 cfg.ownCapeSha1 = getStr(ac, "sha1", "");
+                cfg.ownCapeFps = getInt(ac, "fps", 8);
             }
             if (root.has("players") && root.get("players").isJsonObject()) {
                 for (Map.Entry<String, JsonElement> e : root.getAsJsonObject("players").entrySet()) {
@@ -83,6 +87,7 @@ public final class CosmeticsConfig {
                         String cape = getStr(po, "cape", "");
                         String key = normalizeUuid(e.getKey());
                         if (!cape.isEmpty()) cfg.players.put(key, cape);
+                        cfg.playerFps.put(key, getInt(po, "fps", 8));
                         cfg.playerCosmetics.put(key, new PlayerCosmetics(cape, getStr(po, "hat", ""), getStr(po, "effect", ""), getStr(po, "wings", "")));
                     }
                 }
@@ -91,7 +96,7 @@ public final class CosmeticsConfig {
                 for (JsonElement e : root.getAsJsonArray("library")) {
                     if (!e.isJsonObject()) continue;
                     JsonObject c = e.getAsJsonObject();
-                    cfg.library.add(new LibraryCape(getStr(c, "id", ""), getStr(c, "name", "Cape"), getStr(c, "file", ""), getStr(c, "sha1", ""), getStr(c, "source", "custom")));
+                    cfg.library.add(new LibraryCape(getStr(c, "id", ""), getStr(c, "name", "Cape"), getStr(c, "file", ""), getStr(c, "sha1", ""), getStr(c, "source", "custom"), getInt(c, "fps", 8)));
                 }
             }
         } catch (Exception ex) {

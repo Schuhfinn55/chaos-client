@@ -45,6 +45,10 @@ public final class CapeManager {
 
     private final Map<String, Identifier> capes = new ConcurrentHashMap<>();
     private final Map<String, Identifier> libraryTextures = new ConcurrentHashMap<>();
+    /** Animierte Capes (Frame-Streifen): Schlüssel = UUID-Key oder "lib:<id>". */
+    public record AnimatedCape(Identifier[] frames, int fps) {}
+    private final Map<String, AnimatedCape> animated = new ConcurrentHashMap<>();
+    public static final int DEFAULT_FPS = 8;
     private final Set<String> pending = ConcurrentHashMap.newKeySet();
     private final Set<String> negative = ConcurrentHashMap.newKeySet();
     private final ExecutorService executor = Executors.newFixedThreadPool(2, r -> {
@@ -79,6 +83,8 @@ public final class CapeManager {
 
     public void reload(MinecraftClient client) {
         capes.clear();
+        animated.clear();
+        libraryTextures.clear();
         pending.clear();
         negative.clear();
         config = CosmeticsConfig.load(baseDir);
@@ -103,7 +109,7 @@ public final class CapeManager {
         applyOwnCape(client);
         if (config.showOtherCapes) {
             for (Map.Entry<String, String> e : config.players.entrySet()) {
-                loadFromFile(client, e.getKey(), baseDir.resolve(e.getValue()), "player");
+                loadFromFile(client, e.getKey(), baseDir.resolve(e.getValue()), "player", config.playerFps.getOrDefault(e.getKey(), DEFAULT_FPS));
             }
         }
         ChaosClient.LOGGER.info("[ChaosCosmetics] bereit: {} Cape(s) lokal, Bibliothek {}, API={}", capes.size(), config.library.size(), config.apiUrl.isEmpty() ? "aus" : "an");
@@ -126,7 +132,7 @@ public final class CapeManager {
         if (activeCapeId.isEmpty()) return;
         CosmeticsConfig.LibraryCape lib = libraryCape(activeCapeId);
         Path file = lib != null && !lib.file().isEmpty() ? baseDir.resolve(lib.file()) : (config.ownCapeFile != null ? baseDir.resolve(config.ownCapeFile) : null);
-        if (file != null) loadFromFile(client, config.ownerUuid, file, "own");
+        if (file != null) loadFromFile(client, config.ownerUuid, file, "own", lib != null ? lib.fps() : config.ownCapeFps);
     }
 
     public CosmeticsConfig.LibraryCape libraryCape(String id) {
@@ -148,20 +154,59 @@ public final class CapeManager {
     /** Textur eines Bibliotheks-Capes (für die Vorschau), lädt bei Bedarf. */
     public Identifier previewTexture(CosmeticsConfig.LibraryCape cape) {
         Identifier id = libraryTextures.get(cape.id());
-        if (id != null) return id;
+        if (id != null) return frameNow("lib:" + cape.id(), id);
         Path file = baseDir.resolve(cape.file());
         if (!Files.exists(file)) return null;
         try {
             byte[] bytes = Files.readAllBytes(file);
             if (!isValidCapePng(bytes)) return null;
             NativeImage image = NativeImage.read(new ByteArrayInputStream(bytes));
-            Identifier tex = Identifier.of(NAMESPACE, "library/" + cape.id().toLowerCase().replaceAll("[^a-z0-9_]", "_"));
-            MinecraftClient.getInstance().getTextureManager().registerTexture(tex, new NativeImageBackedTexture(() -> "chaos_lib_" + cape.id(), image));
-            libraryTextures.put(cape.id(), tex);
-            return tex;
+            String safe = cape.id().toLowerCase().replaceAll("[^a-z0-9_]", "_");
+            Identifier[] frames = registerFrames(MinecraftClient.getInstance(), "library/" + safe, "chaos_lib_" + safe, image);
+            libraryTextures.put(cape.id(), frames[0]);
+            if (frames.length > 1) animated.put("lib:" + cape.id(), new AnimatedCape(frames, cape.fps()));
+            return frames[0];
         } catch (Exception e) {
             return null;
         }
+    }
+
+    /** Aktuelles Frame eines (ggf. animierten) Capes. */
+    private Identifier frameNow(String key, Identifier base) {
+        AnimatedCape a = animated.get(key);
+        if (a == null || a.frames().length <= 1) return base;
+        int fps = Math.max(1, Math.min(60, a.fps()));
+        int idx = (int) ((System.currentTimeMillis() * fps / 1000L) % a.frames().length);
+        return a.frames()[idx];
+    }
+
+    /** Anzahl der Frames eines Cape-Streifens (Breite:Höhe je Frame = 2:1), 0 = ungültig. */
+    public static int frameCount(int w, int h) {
+        int fh = w / 2;
+        return fh > 0 && h % fh == 0 ? h / fh : 0;
+    }
+
+    /** Registriert die Textur(en) eines Capes; Streifen werden in einzelne Frame-Texturen zerlegt. */
+    private Identifier[] registerFrames(MinecraftClient client, String baseName, String label, NativeImage image) {
+        int w = image.getWidth(), h = image.getHeight();
+        int n = Math.max(1, frameCount(w, h));
+        if (n == 1) {
+            Identifier id = Identifier.of(NAMESPACE, baseName);
+            client.getTextureManager().registerTexture(id, new NativeImageBackedTexture(() -> label, image));
+            return new Identifier[]{id};
+        }
+        int fh = w / 2;
+        Identifier[] out = new Identifier[n];
+        for (int i = 0; i < n; i++) {
+            NativeImage f = new NativeImage(w, fh, true);
+            for (int y = 0; y < fh; y++) for (int x = 0; x < w; x++) f.setColorArgb(x, y, image.getColorArgb(x, y + i * fh));
+            Identifier id = Identifier.of(NAMESPACE, baseName + "_f" + i);
+            final int fi = i;
+            client.getTextureManager().registerTexture(id, new NativeImageBackedTexture(() -> label + "_f" + fi, f));
+            out[i] = id;
+        }
+        image.close();
+        return out;
     }
 
     /** Cape-Textur für einen Spieler oder null (→ Vanilla-Verhalten). */
@@ -172,7 +217,7 @@ public final class CapeManager {
         if (own && !showOwn) return null;
         if (!own && !showOthers) return null;
         Identifier id = capes.get(key);
-        if (id != null) return id;
+        if (id != null) return frameNow(key, id);
         if (own) return null;
         if (negative.contains(key) || pending.contains(key)) return null;
         if (!pending.add(key)) return null;
@@ -182,16 +227,20 @@ public final class CapeManager {
 
     /* ----------------------- Laden ----------------------- */
 
-    private void loadFromFile(MinecraftClient client, String uuidKey, Path file, String tag) {
+    private void loadFromFile(MinecraftClient client, String uuidKey, Path file, String tag) { loadFromFile(client, uuidKey, file, tag, DEFAULT_FPS); }
+
+    private void loadFromFile(MinecraftClient client, String uuidKey, Path file, String tag, int fps) {
         if (!Files.exists(file)) return;
         try {
-            registerBytes(client, uuidKey, Files.readAllBytes(file), tag);
+            registerBytes(client, uuidKey, Files.readAllBytes(file), tag, fps);
         } catch (IOException e) {
             ChaosClient.LOGGER.warn("[ChaosCosmetics] Cape {} nicht lesbar: {}", file, e.toString());
         }
     }
 
-    private void registerBytes(MinecraftClient client, String uuidKey, byte[] bytes, String tag) {
+    private void registerBytes(MinecraftClient client, String uuidKey, byte[] bytes, String tag) { registerBytes(client, uuidKey, bytes, tag, metaFps(uuidKey)); }
+
+    private void registerBytes(MinecraftClient client, String uuidKey, byte[] bytes, String tag, int fps) {
         if (!isValidCapePng(bytes)) {
             ChaosClient.LOGGER.warn("[ChaosCosmetics] Ungültiges Cape-PNG für {} ({}).", uuidKey, tag);
             negative.add(uuidKey);
@@ -201,9 +250,9 @@ public final class CapeManager {
         Runnable task = () -> {
             try {
                 NativeImage image = NativeImage.read(new ByteArrayInputStream(bytes));
-                Identifier id = Identifier.of(NAMESPACE, "capes/" + uuidKey + "_" + Integer.toHexString(java.util.Arrays.hashCode(bytes)));
-                client.getTextureManager().registerTexture(id, new NativeImageBackedTexture(() -> "chaos_cape_" + uuidKey, image));
-                capes.put(uuidKey, id);
+                Identifier[] frames = registerFrames(client, "capes/" + uuidKey + "_" + Integer.toHexString(java.util.Arrays.hashCode(bytes)), "chaos_cape_" + uuidKey, image);
+                capes.put(uuidKey, frames[0]);
+                if (frames.length > 1) animated.put(uuidKey, new AnimatedCape(frames, fps)); else animated.remove(uuidKey);
             } catch (Exception e) {
                 ChaosClient.LOGGER.warn("[ChaosCosmetics] Cape-Textur für {} fehlgeschlagen: {}", uuidKey, e.toString());
                 negative.add(uuidKey);
@@ -219,8 +268,21 @@ public final class CapeManager {
         if ((b[0] & 0xFF) != 0x89 || b[1] != 'P' || b[2] != 'N' || b[3] != 'G') return false;
         int w = ((b[16] & 0xFF) << 24) | ((b[17] & 0xFF) << 16) | ((b[18] & 0xFF) << 8) | (b[19] & 0xFF);
         int h = ((b[20] & 0xFF) << 24) | ((b[21] & 0xFF) << 16) | ((b[22] & 0xFF) << 8) | (b[23] & 0xFF);
-        if (w <= 0 || h <= 0 || w > 2048 || h > 1024) return false;
-        return w == h * 2 && w % 64 == 0;
+        if (w < 64 || h <= 0 || w > 2048 || h > 8192 || w % 64 != 0) return false;
+        int frames = frameCount(w, h);
+        return frames >= 1 && frames <= 64; // 1 Frame = normales Cape, mehrere = animierter Streifen
+    }
+
+    /** FPS aus der Cache-Meta eines Spielers (Standard 8). */
+    private int metaFps(String uuidKey) {
+        try {
+            Path meta = baseDir.resolve("cache").resolve(uuidKey + ".json");
+            if (Files.exists(meta)) {
+                JsonObject m = GSON.fromJson(Files.readString(meta), JsonObject.class);
+                if (m != null && m.has("fps")) return Math.max(1, Math.min(60, m.get("fps").getAsInt()));
+            }
+        } catch (Exception ignored) {}
+        return DEFAULT_FPS;
     }
 
     /* ----------------------- API / Cache ----------------------- */
@@ -254,6 +316,7 @@ public final class CapeManager {
             if (resp.statusCode() != 200) { useCacheOrGiveUp(client, uuidKey, cached); return; }
             JsonObject body = GSON.fromJson(resp.body(), JsonObject.class);
             if (body == null) { negative.add(uuidKey); pending.remove(uuidKey); return; }
+            CosmeticsManager.get().markChaos(uuidKey);
             String vis = body.has("visibility") ? body.get("visibility").getAsString() : "everyone";
             if ("none".equals(vis)) { CosmeticsManager.get().setRemote(uuidKey, "", ""); negative.add(uuidKey); pending.remove(uuidKey); return; }
             String rHat = body.has("hat") && !body.get("hat").isJsonNull() ? body.get("hat").getAsString() : "";
@@ -273,8 +336,14 @@ public final class CapeManager {
             JsonObject cape = body.getAsJsonObject("activeCape");
             String url = cape.has("url") ? cape.get("url").getAsString() : "";
             String sha1 = cape.has("sha1") ? cape.get("sha1").getAsString() : "";
+            int rFps = DEFAULT_FPS;
+            try { if (cape.has("fps") && !cape.get("fps").isJsonNull()) rFps = Math.max(1, Math.min(60, cape.get("fps").getAsInt())); } catch (Exception ignored) {}
             if (url.isEmpty() || !(url.startsWith("https://") || (config.allowHttp && url.startsWith("http://")))) { useCacheOrGiveUp(client, uuidKey, cached); return; }
-            if (cachedSha1 != null && !sha1.isEmpty() && cachedSha1.equals(sha1) && Files.exists(cached)) { registerBytes(client, uuidKey, Files.readAllBytes(cached), "cache"); return; }
+            if (cachedSha1 != null && !sha1.isEmpty() && cachedSha1.equals(sha1) && Files.exists(cached)) {
+                try { JsonObject mm = GSON.fromJson(Files.readString(meta), JsonObject.class); if (mm != null) { mm.addProperty("fps", rFps); Files.writeString(meta, GSON.toJson(mm)); } } catch (Exception ignored) {}
+                registerBytes(client, uuidKey, Files.readAllBytes(cached), "cache", rFps);
+                return;
+            }
             HttpRequest dl = HttpRequest.newBuilder(URI.create(url)).timeout(Duration.ofSeconds(15)).header("User-Agent", "chaos-client/" + ChaosClient.VERSION).GET().build();
             HttpResponse<byte[]> png = http.send(dl, HttpResponse.BodyHandlers.ofByteArray());
             if (png.statusCode() != 200 || !isValidCapePng(png.body())) { useCacheOrGiveUp(client, uuidKey, cached); return; }
@@ -285,9 +354,10 @@ public final class CapeManager {
             m.addProperty("hat", rHat);
             m.addProperty("effect", rEffect);
             m.addProperty("wings", rWings);
+            m.addProperty("fps", rFps);
             m.addProperty("cachedAt", System.currentTimeMillis());
             Files.writeString(meta, GSON.toJson(m));
-            registerBytes(client, uuidKey, png.body(), "api");
+            registerBytes(client, uuidKey, png.body(), "api", rFps);
         } catch (Exception e) {
             ChaosClient.LOGGER.debug("[ChaosCosmetics] Remote-Cape {} fehlgeschlagen: {}", uuidKey, e.toString());
             negative.add(uuidKey);
