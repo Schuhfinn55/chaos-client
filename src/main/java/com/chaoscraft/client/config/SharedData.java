@@ -37,6 +37,9 @@ public final class SharedData {
     public String profileName = "";
     public String accountName = "";
     public String chaoscraftAddress = "";
+    /** Lokale Launcher-Bridge (Token-Erneuerung im Spiel); 0 = Launcher läuft nicht. */
+    public int bridgePort = 0;
+    public String bridgeSecret = "";
     public final List<ServerEntry> servers = new ArrayList<>();
     public final List<FriendEntry> friends = new ArrayList<>();
     public boolean present;
@@ -61,6 +64,8 @@ public final class SharedData {
                     d.profileName = str(o, "profileName");
                     d.accountName = str(o, "accountName");
                     d.chaoscraftAddress = str(o, "chaoscraftAddress");
+                    d.bridgePort = o.has("bridgePort") && o.get("bridgePort").isJsonPrimitive() ? o.get("bridgePort").getAsInt() : 0;
+                    d.bridgeSecret = str(o, "bridgeSecret");
                     if (o.has("servers") && o.get("servers").isJsonArray()) {
                         for (JsonElement e : o.getAsJsonArray("servers")) {
                             if (!e.isJsonObject()) continue;
