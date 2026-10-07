@@ -10,6 +10,7 @@ import net.minecraft.client.model.ModelPartBuilder;
 import net.minecraft.client.model.ModelTransform;
 import net.minecraft.client.model.TexturedModelData;
 import net.minecraft.client.render.OverlayTexture;
+import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.RenderLayers;
 import net.minecraft.client.render.command.OrderedRenderCommandQueue;
 import net.minecraft.client.render.entity.feature.FeatureRenderer;
@@ -20,6 +21,8 @@ import net.minecraft.client.texture.NativeImage;
 import net.minecraft.client.texture.NativeImageBackedTexture;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.RotationAxis;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,6 +36,7 @@ import java.util.UUID;
  * ModelPart aus farbigen Quadern gebaut; die Farben kommen aus einer
  * dynamisch erzeugten Paletten-Textur (256×256, 32 Farbfelder à 64×32),
  * damit ein Hut mit einem einzigen Draw-Call gezeichnet werden kann.
+ * Hüte können leuchten (emissiv), rotieren (spin) und schweben (bob).
  */
 public final class HatFeatureRenderer extends FeatureRenderer<PlayerEntityRenderState, PlayerEntityModel> {
 
@@ -101,7 +105,12 @@ public final class HatFeatureRenderer extends FeatureRenderer<PlayerEntityRender
             ModelPart part = partFor(hat);
             matrices.push();
             getContextModel().head.applyTransform(matrices);
-            queue.submitModelPart(part, matrices, RenderLayers.entityCutoutNoCull(PALETTE), light, OverlayTexture.DEFAULT_UV, null);
+            float t = state.age;
+            if (hat.bob() != 0f) matrices.translate(0f, MathHelper.sin(t * 0.09f) * hat.bob(), 0f);
+            if (hat.spin() != 0f) matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(t * hat.spin()));
+            RenderLayer layer = hat.glow() ? RenderLayers.entityTranslucentEmissive(PALETTE) : RenderLayers.entityCutoutNoCull(PALETTE);
+            int lit = hat.glow() ? 0x00F000F0 : light;
+            queue.submitModelPart(part, matrices, layer, lit, OverlayTexture.DEFAULT_UV, null);
             matrices.pop();
         } catch (Exception e) {
             ChaosClient.LOGGER.warn("[ChaosCosmetics] Hut {}: {}", hatId, e.toString());

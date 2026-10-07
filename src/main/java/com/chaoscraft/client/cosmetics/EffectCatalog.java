@@ -15,6 +15,18 @@ public final class EffectCatalog {
     private static final Map<String, Effect> EFFECTS = new LinkedHashMap<>();
 
     static {
+        // ---- Premium / neu
+        add("chaos-storm", "Chaos-Sturm", "Doppelte Helix aus rotem und schwarzem Staub, die um dich aufsteigt.", "🌪", 0xe11d2e, Pattern.RING);
+        add("lightning", "Gewitter", "Elektrische Entladungen und helle Blitzsäulen um dich herum.", "⚡", 0x7dd3fc, Pattern.BURST);
+        add("void-rift", "Void-Riss", "Dunkler Portalstrudel am Boden, der violette Splitter nach oben zieht.", "🕳", 0x4c1d95, Pattern.RING);
+        add("galaxy", "Galaxie", "Sternenspirale aus Licht und Runen, die um dich kreist.", "🌌", 0x818cf8, Pattern.ORBIT);
+        add("blood-moon", "Blutmond", "Blutroter Nebel, der aus dem Boden aufsteigt, mit Glutfunken.", "🌑", 0x8a0f1c, Pattern.RISE);
+        add("wisps", "Irrlichter", "Blaue Seelen, die um deinen Kopf schweben.", "👻", 0x60a5fa, Pattern.ORBIT);
+        add("angel-ring", "Engelsring", "Leuchtender Lichtring über dem Kopf mit sanftem Funkeln.", "😇", 0xfff1b8, Pattern.ORBIT);
+        add("firework-trail", "Feuerwerksspur", "Funkelnde Feuerwerksspur hinter dir beim Laufen.", "🎆", 0xfbbf24, Pattern.FEET);
+        add("rainbow", "Regenbogen", "Regenbogenfarbene Helix, die um dich tanzt.", "🌈", 0xf472b6, Pattern.ORBIT);
+        add("frost-aura", "Frost-Aura", "Schneeflocken und Eisstaub, die um dich kreisen.", "❄", 0xbae6fd, Pattern.RING);
+        // ---- Klassiker
         add("chaos-aura", "Chaos-Aura", "Roter Partikelring, der um dich kreist.", "🔴", 0xe11d2e, Pattern.RING);
         add("flame-feet", "Flammenschritte", "Flammen an deinen Füßen.", "🔥", 0xff6a00, Pattern.FEET);
         add("soul-fire", "Seelenfeuer", "Blaue Seelenflammen um dich.", "💙", 0x38bdf8, Pattern.RISE);

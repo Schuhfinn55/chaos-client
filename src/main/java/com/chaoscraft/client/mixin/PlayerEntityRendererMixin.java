@@ -14,7 +14,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class PlayerEntityRendererMixin {
     @Inject(method = "updateRenderState(Lnet/minecraft/entity/PlayerLikeEntity;Lnet/minecraft/client/render/entity/state/PlayerEntityRenderState;F)V", at = @At("TAIL"))
     private void chaosclient$storeUuid(PlayerLikeEntity entity, PlayerEntityRenderState state, float tickDelta, CallbackInfo ci) {
-        if (state instanceof ChaosPlayerState cps) cps.chaos$setUuid(entity.getUuid());
+        if (state instanceof ChaosPlayerState cps) {
+            cps.chaos$setUuid(entity.getUuid());
+            try { cps.chaos$setMotion(!entity.isOnGround(), (float) entity.getVelocity().y); } catch (Exception ignored) {}
+        }
         // Chaos-Badge vor dem Namen über dem Kopf
         try { state.displayName = com.chaoscraft.client.cosmetics.BadgeManager.decorate(entity.getUuid(), state.displayName); } catch (Exception ignored) {}
     }
