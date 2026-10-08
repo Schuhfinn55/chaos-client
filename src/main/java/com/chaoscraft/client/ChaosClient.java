@@ -37,7 +37,7 @@ public class ChaosClient implements ClientModInitializer {
 
     public static final String MOD_ID = "chaosclient";
     public static final String NAME = "Chaos Client";
-    public static final String VERSION = "2.6.5";
+    public static final String VERSION = "2.6.6";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
     private static ChaosClient instance;
@@ -106,13 +106,14 @@ public class ChaosClient implements ClientModInitializer {
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
             SharedData.reload();
             client.execute(() -> {
+                writePresence(client.getCurrentServerEntry() != null ? client.getCurrentServerEntry().address : "");
                 EscMenuModule.resetHint();
                 if (SharedData.get().present) {
                     notifications.push("CHAOS", "Chaos Client " + VERSION + " aktiv · " + KeyManagerHint(), NotificationManager.Kind.INFO);
                 }
             });
         });
-        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> keyManager.releaseAll());
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> { keyManager.releaseAll(); writePresence(""); });
         ScreenEvents.AFTER_INIT.register((client, screen, w, h) -> EscMenuModule.onScreenInit(screen));
 
         LOGGER.info("[{}] bereit – {} Module, Profil '{}'.", NAME, moduleManager.getModules().size(), configManager.getActiveProfile());
@@ -138,6 +139,15 @@ public class ChaosClient implements ClientModInitializer {
     public ConfigManager getConfigManager() { return configManager; }
     public KeyManager getKeyManager() { return keyManager; }
     public NotificationManager getNotifications() { return notifications; }
+
+    /** Schreibt chaos-client/presence.json (Server, auf dem wir gerade sind) – der Launcher meldet das als Präsenz an die Freundesliste. */
+    private static void writePresence(String server) {
+        try {
+            java.nio.file.Path f = SharedData.dir().resolve("presence.json");
+            java.nio.file.Files.createDirectories(f.getParent());
+            java.nio.file.Files.writeString(f, "{\"server\":\"" + (server == null ? "" : server.replace("\"", "")) + "\",\"at\":" + System.currentTimeMillis() + "}");
+        } catch (Exception ignored) {}
+    }
     public WaypointManager getWaypoints() { return waypoints; }
     public ServerManager getServers() { return servers; }
     public ScreenshotManager getScreenshots() { return screenshots; }
