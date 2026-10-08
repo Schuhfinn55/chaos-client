@@ -94,7 +94,9 @@ public final class WingsFeatureRenderer extends FeatureRenderer<PlayerEntityRend
             float pulse = w.glow() ? 1f + 0.035f * MathHelper.sin(t * 0.16f) : 1f;
 
             net.minecraft.util.Identifier tex = w.frameTexture(System.currentTimeMillis());
-            RenderLayer layer = w.glow() ? RenderLayers.entityTranslucentEmissive(tex) : RenderLayers.entityTranslucent(tex);
+            // Immer die normale Translucent-Schicht (schreibt Tiefe). Die Emissive-Schicht schreibt KEINE Tiefenwerte –
+            // dann werden danach gezeichnete Spieler/NPCs durch die Flügel hindurch gemalt. Leuchten = volle Lichtstufe.
+            RenderLayer layer = RenderLayers.entityTranslucent(tex);
             int lit = w.glow() ? 0x00F000F0 : light;
 
             matrices.push();

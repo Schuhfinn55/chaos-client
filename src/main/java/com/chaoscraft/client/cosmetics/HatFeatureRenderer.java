@@ -108,7 +108,8 @@ public final class HatFeatureRenderer extends FeatureRenderer<PlayerEntityRender
             float t = state.age;
             if (hat.bob() != 0f) matrices.translate(0f, MathHelper.sin(t * 0.09f) * hat.bob(), 0f);
             if (hat.spin() != 0f) matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(t * hat.spin()));
-            RenderLayer layer = hat.glow() ? RenderLayers.entityTranslucentEmissive(PALETTE) : RenderLayers.entityCutoutNoCull(PALETTE);
+            // Emissive-Schicht schreibt keine Tiefe (Durchscheinen) → Cutout + volle Lichtstufe
+            RenderLayer layer = RenderLayers.entityCutoutNoCull(PALETTE);
             int lit = hat.glow() ? 0x00F000F0 : light;
             queue.submitModelPart(part, matrices, layer, lit, OverlayTexture.DEFAULT_UV, null);
             matrices.pop();
