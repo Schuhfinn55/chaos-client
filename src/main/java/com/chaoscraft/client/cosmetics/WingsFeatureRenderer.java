@@ -109,13 +109,15 @@ public final class WingsFeatureRenderer extends FeatureRenderer<PlayerEntityRend
                     boolean isLeft = side == 0;
                     float sx = isLeft ? 1f : -1f;
                     ModelPart p = parts[(inner ? 2 : 0) + (isLeft ? 0 : 1)];
-                    p.originX = sx * (WingsCatalog.rootX() + (inner ? 0.4f : 0f));
-                    p.originY = WingsCatalog.rootY() + (inner ? 1.2f : 0f);
-                    p.originZ = WingsCatalog.rootZ() + (inner ? 0.9f : 0f);
-                    float s = w.scale() * pulse * (inner ? 0.68f : 1f);
+                    // Innenschwinge liegt ZWISCHEN Körper und Außenflügel (näher am Rücken), damit sie von hinten
+                    // vom Außenflügel verdeckt wird und nur seitlich/vorn als Tiefe sichtbar ist.
+                    p.originX = sx * (WingsCatalog.rootX() - 0.3f * (inner ? 1f : 0f));
+                    p.originY = WingsCatalog.rootY() + (inner ? 1.0f : 0f);
+                    p.originZ = WingsCatalog.rootZ() - (inner ? 0.8f : 0f);
+                    float s = w.scale() * pulse * (inner ? 0.74f : 1f);
                     p.xScale = p.yScale = p.zScale = s;
-                    float o = inner ? open + 11f : open;
-                    float ti = inner ? tilt - 5f + flap * 3f : tilt + breathe;
+                    float o = inner ? open + 9f : open;
+                    float ti = inner ? tilt - 3f + flap * 2f : tilt + breathe;
                     // Modellraum: y nach unten, Spieler blickt nach -z → negative Yaw klappt die Spitze nach hinten,
                     // negative Roll hebt die Spitze an.
                     p.setAngles((float) Math.toRadians(pitch), (float) Math.toRadians(-sx * o), (float) Math.toRadians(-sx * ti));
