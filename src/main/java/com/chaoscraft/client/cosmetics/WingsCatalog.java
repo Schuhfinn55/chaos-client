@@ -25,7 +25,14 @@ public final class WingsCatalog {
 
     public record Wings(String id, String name, String description, String icon, Identifier texture,
                         float flapSpeed, float flapAmp, float openAngle, float tilt, float scale,
-                        boolean glow, String particle, List<Integer> colors) {}
+                        boolean glow, String particle, List<Integer> colors, int frames, int fps, boolean exclusive) {
+        /** Textur des aktuellen Animations-Frames (statische Wings: immer die Haupttextur). */
+        public Identifier frameTexture(long nowMs) {
+            if (frames <= 1) return texture;
+            int i = (int) ((nowMs * Math.max(1, fps) / 1000L) % frames);
+            return Identifier.of(ChaosClient.MOD_ID, "textures/wings/" + id + "_f" + i + ".png");
+        }
+    }
 
     private static final Map<String, Wings> WINGS = new LinkedHashMap<>();
     private static float rootX = 2f, rootY = 1.5f, rootZ = 2.3f;
@@ -60,7 +67,8 @@ public final class WingsCatalog {
                 Wings wings = new Wings(id, s(w, "name", id), s(w, "description", ""), s(w, "icon", "✦"),
                     Identifier.of(ChaosClient.MOD_ID, "textures/wings/" + id + ".png"),
                     f(w, "flapSpeed", 0.08f), f(w, "flapAmp", 18f), f(w, "openAngle", 38f), f(w, "tilt", 10f), f(w, "scale", 1f),
-                    w.has("glow") && w.get("glow").getAsBoolean(), s(w, "particle", ""), colors);
+                    w.has("glow") && w.get("glow").getAsBoolean(), s(w, "particle", ""), colors,
+                    (int) f(w, "frames", 1f), (int) f(w, "fps", 10f), w.has("exclusive") && w.get("exclusive").getAsBoolean());
                 WINGS.put(id, wings);
             }
             ChaosClient.LOGGER.info("[ChaosCosmetics] {} Wings geladen.", WINGS.size());

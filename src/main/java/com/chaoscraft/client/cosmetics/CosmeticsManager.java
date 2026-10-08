@@ -105,7 +105,17 @@ public final class CosmeticsManager {
         return local != null ? local : remoteWings.get(key);
     }
 
+    /** Ob exklusive Wings für den eigenen Account freigeschaltet sind. */
+    public boolean isUnlocked(String id) {
+        WingsCatalog.Wings w = WingsCatalog.byId(id);
+        return w == null || !w.exclusive() || CapeManager.get().config().unlocks.contains(id);
+    }
+
     public void setWings(String id) {
+        if (!isUnlocked(sanitize(id))) {
+            ChaosClient.get().getNotifications().error("Diese Wings sind legendär – Code im Chaos Launcher unter Cosmetics › Wings einlösen.");
+            return;
+        }
         wingsId = sanitize(id);
         writeState();
         WingsCatalog.Wings w = WingsCatalog.byId(wingsId);

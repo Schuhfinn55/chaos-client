@@ -205,6 +205,9 @@ public final class EffectTicker {
                 case "glow" -> ParticleTypes.GLOW;
                 case "dust_gold" -> new DustParticleEffect(0xF5C342, 0.8f);
                 case "dust_cyan" -> new DustParticleEffect(0x00E5FF, 0.8f);
+                // Legendär: Mischung aus mehreren Partikeln
+                case "overlord" -> switch (RNG.nextInt(4)) { case 0 -> ParticleTypes.FLAME; case 1 -> ParticleTypes.ELECTRIC_SPARK; case 2 -> ParticleTypes.LAVA; default -> new DustParticleEffect(0xFF1F3D, 1.2f); };
+                case "celestial" -> switch (RNG.nextInt(4)) { case 0 -> ParticleTypes.END_ROD; case 1 -> ParticleTypes.GLOW; case 2 -> ParticleTypes.TOTEM_OF_UNDYING; default -> new DustParticleEffect(MathHelper.hsvToRgb((System.currentTimeMillis() % 4000) / 4000f, 0.5f, 1f) & 0xFFFFFF, 1.0f); };
                 default -> null;
             };
             if (pe != null) add(mc, pe, x, y, z, -bx * 0.02, 0.01, -bz * 0.02);

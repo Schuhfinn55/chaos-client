@@ -186,7 +186,8 @@ public class CosmeticsScreen extends ChaosScreen {
             int[] colors = new int[Math.min(6, set.size())];
             int k = 0;
             for (int c : set) { if (k >= colors.length) break; colors[k++] = c; }
-            content.add(new CosmeticCard(cx, cy, cw, 96, wg.icon() + " " + wg.name(), wg.description(), colors, () -> cm.wingsId().equals(wg.id()), () -> { cm.setWings(wg.id()); init(); }));
+            boolean locked = !cm.isUnlocked(wg.id());
+            content.add(new CosmeticCard(cx, cy, cw, 96, (locked ? "🔒 " : "") + wg.icon() + " " + wg.name(), locked ? "LEGENDÄR – Code im Launcher einlösen" : wg.description(), colors, () -> cm.wingsId().equals(wg.id()), () -> { cm.setWings(wg.id()); init(); }));
         }
         y += ((list.size() + cols - 1) / cols) * 104 + 8;
         content.setContentHeight(y + 8 - content.y);

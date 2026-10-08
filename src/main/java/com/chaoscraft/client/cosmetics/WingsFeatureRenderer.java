@@ -94,7 +94,8 @@ public final class WingsFeatureRenderer extends FeatureRenderer<PlayerEntityRend
             float breathe = MathHelper.sin(t * 0.045f) * 1.0f;
             float pulse = w.glow() ? 1f + 0.035f * MathHelper.sin(t * 0.16f) : 1f;
 
-            RenderLayer layer = w.glow() ? RenderLayers.entityTranslucentEmissive(w.texture()) : RenderLayers.entityTranslucent(w.texture());
+            net.minecraft.util.Identifier tex = w.frameTexture(System.currentTimeMillis());
+            RenderLayer layer = w.glow() ? RenderLayers.entityTranslucentEmissive(tex) : RenderLayers.entityTranslucent(tex);
             int lit = w.glow() ? 0x00F000F0 : light;
             int litInner = w.glow() ? 0x00F000F0 : LightmapTextureManager.pack(
                 Math.max(0, LightmapTextureManager.getBlockLightCoordinates(light) - 5),

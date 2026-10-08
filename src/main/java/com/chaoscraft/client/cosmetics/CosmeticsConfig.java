@@ -52,6 +52,8 @@ public final class CosmeticsConfig {
     public String hatId = "";
     public String effectId = "";
     public String wingsId = "";
+    /** Per Code freigeschaltete exklusive Wings (vom Launcher exportiert, von der API bestätigt). */
+    public final List<String> unlocks = new ArrayList<>();
 
     public static CosmeticsConfig load(Path dir) {
         CosmeticsConfig cfg = new CosmeticsConfig();
@@ -73,6 +75,7 @@ public final class CosmeticsConfig {
             cfg.hatId = getStr(root, "hat", "");
             cfg.effectId = getStr(root, "effect", "");
             cfg.wingsId = getStr(root, "wings", "");
+            if (root.has("unlocks") && root.get("unlocks").isJsonArray()) for (JsonElement e : root.getAsJsonArray("unlocks")) if (e.isJsonPrimitive()) cfg.unlocks.add(e.getAsString());
             if (root.has("activeCape") && root.get("activeCape").isJsonObject()) {
                 JsonObject ac = root.getAsJsonObject("activeCape");
                 cfg.activeCapeId = getStr(ac, "id", "");
