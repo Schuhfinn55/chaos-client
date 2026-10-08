@@ -35,7 +35,7 @@ public final class WingsCatalog {
     }
 
     private static final Map<String, Wings> WINGS = new LinkedHashMap<>();
-    private static float rootX = 2f, rootY = 1.5f, rootZ = 2.3f;
+    private static float rootX = 4.2f, rootY = 2f, rootZ = 3.1f;
     private static float planeW = 26f, planeH = 30f, planeTop = 16f, texW = 64f, texH = 32f;
     private static boolean loaded;
 

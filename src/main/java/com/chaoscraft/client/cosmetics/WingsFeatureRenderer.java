@@ -86,10 +86,10 @@ public final class WingsFeatureRenderer extends FeatureRenderer<PlayerEntityRend
             // Ruhig und flach aufgespannt hinter dem Rücken; Hauptschlag = Heben/Senken der Spitzen,
             // Auf-/Zuklappen nur dezent. In der Luft weit gespreizt, im Fall hochgerissen (bremsen).
             float open = w.openAngle() * 0.6f + flap * amp * 0.25f + (gliding ? 15f : 0f) + (airborne ? 14f : 0f) + (sneaking ? -8f : 0f) + (moving ? 3f : 0f);
-            open = MathHelper.clamp(open, 10f, 62f);
+            open = MathHelper.clamp(open, 18f, 62f); // nie flach am Rücken → kein Durchstoßen des Rumpfs
             float tilt = w.tilt() * 0.6f + flap * amp * 0.35f + (gliding ? 8f : 0f) + (falling ? 16f : airborne ? 6f : 0f) - (sneaking ? 4f : 0f);
             tilt = MathHelper.clamp(tilt, -8f, 34f);
-            float pitch = sneaking ? 10f : (gliding ? -6f : falling ? -4f : 0f);
+            float pitch = sneaking ? 6f : (gliding ? -6f : falling ? -4f : 0f);
             float breathe = MathHelper.sin(t * 0.045f) * 1.0f;
             float pulse = w.glow() ? 1f + 0.035f * MathHelper.sin(t * 0.16f) : 1f;
 
