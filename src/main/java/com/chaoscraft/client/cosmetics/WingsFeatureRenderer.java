@@ -7,7 +7,6 @@ import net.minecraft.client.model.ModelPart;
 import net.minecraft.client.model.ModelPartBuilder;
 import net.minecraft.client.model.ModelTransform;
 import net.minecraft.client.model.TexturedModelData;
-import net.minecraft.client.render.LightmapTextureManager;
 import net.minecraft.client.render.OverlayTexture;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.RenderLayers;
@@ -36,7 +35,7 @@ import java.util.UUID;
  */
 public final class WingsFeatureRenderer extends FeatureRenderer<PlayerEntityRenderState, PlayerEntityModel> {
 
-    /** Flügelteile pro Spieler: [links außen, rechts außen, links innen, rechts innen]. */
+    /** Flügelteile pro Spieler: [links, rechts]. */
     private static final java.util.Map<UUID, ModelPart[]> PARTS = new java.util.HashMap<>();
 
     public WingsFeatureRenderer(FeatureRendererContext<PlayerEntityRenderState, PlayerEntityModel> ctx) {
@@ -70,7 +69,7 @@ public final class WingsFeatureRenderer extends FeatureRenderer<PlayerEntityRend
         WingsCatalog.Wings w = WingsCatalog.byId(id);
         if (w == null) return;
         try {
-            ModelPart[] parts = PARTS.computeIfAbsent(uuid, k -> new ModelPart[]{build(true), build(false), build(true), build(false)});
+            ModelPart[] parts = PARTS.computeIfAbsent(uuid, k -> new ModelPart[]{build(true), build(false)});
             if (PARTS.size() > 64) { ModelPart[] keep = parts; PARTS.clear(); PARTS.put(uuid, keep); }
             float t = state.age;
             boolean moving = state.limbSwingAmplitude > 0.15f;
@@ -97,32 +96,22 @@ public final class WingsFeatureRenderer extends FeatureRenderer<PlayerEntityRend
             net.minecraft.util.Identifier tex = w.frameTexture(System.currentTimeMillis());
             RenderLayer layer = w.glow() ? RenderLayers.entityTranslucentEmissive(tex) : RenderLayers.entityTranslucent(tex);
             int lit = w.glow() ? 0x00F000F0 : light;
-            int litInner = w.glow() ? 0x00F000F0 : LightmapTextureManager.pack(
-                Math.max(0, LightmapTextureManager.getBlockLightCoordinates(light) - 5),
-                Math.max(0, LightmapTextureManager.getSkyLightCoordinates(light) - 5));
 
             matrices.push();
             getContextModel().body.applyTransform(matrices);
-            for (int layerIdx = 1; layerIdx >= 0; layerIdx--) { // innen zuerst (liegt dahinter)
-                boolean inner = layerIdx == 1;
-                for (int side = 0; side < 2; side++) {
-                    boolean isLeft = side == 0;
-                    float sx = isLeft ? 1f : -1f;
-                    ModelPart p = parts[(inner ? 2 : 0) + (isLeft ? 0 : 1)];
-                    // Innenschwinge liegt ZWISCHEN Körper und Außenflügel (näher am Rücken), damit sie von hinten
-                    // vom Außenflügel verdeckt wird und nur seitlich/vorn als Tiefe sichtbar ist.
-                    p.originX = sx * (WingsCatalog.rootX() - 0.3f * (inner ? 1f : 0f));
-                    p.originY = WingsCatalog.rootY() + (inner ? 1.0f : 0f);
-                    p.originZ = WingsCatalog.rootZ() - (inner ? 0.8f : 0f);
-                    float s = w.scale() * pulse * (inner ? 0.74f : 1f);
-                    p.xScale = p.yScale = p.zScale = s;
-                    float o = inner ? open + 9f : open;
-                    float ti = inner ? tilt - 3f + flap * 2f : tilt + breathe;
-                    // Modellraum: y nach unten, Spieler blickt nach -z → negative Yaw klappt die Spitze nach hinten,
-                    // negative Roll hebt die Spitze an.
-                    p.setAngles((float) Math.toRadians(pitch), (float) Math.toRadians(-sx * o), (float) Math.toRadians(-sx * ti));
-                    queue.submitModelPart(p, matrices, layer, inner ? litInner : lit, OverlayTexture.DEFAULT_UV, null);
-                }
+            // Eine Flügellage pro Seite – eine zweite Lage dahinter erzeugt von hinten doppelte Konturen.
+            for (int side = 0; side < 2; side++) {
+                boolean isLeft = side == 0;
+                float sx = isLeft ? 1f : -1f;
+                ModelPart p = parts[isLeft ? 0 : 1];
+                p.originX = sx * WingsCatalog.rootX();
+                p.originY = WingsCatalog.rootY();
+                p.originZ = WingsCatalog.rootZ();
+                p.xScale = p.yScale = p.zScale = w.scale() * pulse;
+                // Modellraum: y nach unten, Spieler blickt nach -z → negative Yaw klappt die Spitze nach hinten,
+                // negative Roll hebt die Spitze an.
+                p.setAngles((float) Math.toRadians(pitch), (float) Math.toRadians(-sx * open), (float) Math.toRadians(-sx * (tilt + breathe)));
+                queue.submitModelPart(p, matrices, layer, lit, OverlayTexture.DEFAULT_UV, null);
             }
             matrices.pop();
         } catch (Exception e) {
