@@ -7,6 +7,7 @@ import com.chaoscraft.client.core.Module;
 import com.chaoscraft.client.emotes.EmoteManager;
 import com.chaoscraft.client.settings.KeybindSetting;
 import com.chaoscraft.client.ui.screens.CosmeticsScreen;
+import com.chaoscraft.client.ui.screens.EmoteWheelScreen;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.HashMap;
@@ -22,7 +23,7 @@ public class EmotesModule extends Module {
     private final Map<String, Boolean> held = new HashMap<>();
 
     public EmotesModule() {
-        super("Emotes", "Emote-Menü und Direkttasten für Emotes (clientseitig, erweiterbar).", Category.COSMETICS, "☺");
+        super("Emotes", "Emote-Rad (Taste) und Direkttasten – Ganzkörper-Animationen, für Chaos-Spieler in der Nähe sichtbar.", Category.COSMETICS, "☺");
         getKeybindSetting().set(GLFW.GLFW_KEY_B);
         alwaysOn();
         tags("emote", "winken", "tanzen", "animation");
@@ -43,7 +44,7 @@ public class EmotesModule extends Module {
     public void setEnabled(boolean enabled) {
         // Taste → Emote-Menü öffnen (Aktion statt Toggle)
         if (!enabled && isEnabled() && mc.currentScreen == null && mc.player != null) {
-            mc.setScreen(new CosmeticsScreen(null, CosmeticsScreen.Tab.EMOTES));
+            mc.setScreen(new EmoteWheelScreen(null));
             return;
         }
         super.setEnabled(true);

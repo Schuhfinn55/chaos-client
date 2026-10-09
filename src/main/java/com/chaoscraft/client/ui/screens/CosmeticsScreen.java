@@ -129,7 +129,7 @@ public class CosmeticsScreen extends ChaosScreen {
             content.add(new Button(x + w - 84, y + 3, 76, 16, em.active() == e ? "Läuft …" : "Abspielen", () -> { em.play(emote); init(); }).style(Button.Style.PRIMARY));
             y += 28;
         }
-        content.add(new Label(x, y + 4, w, "Emotes laufen clientseitig (Handschwung, Drehung). Synchronisierte Animationen folgen über die Cosmetics-API.", theme().textFaint()));
+        content.add(new Label(x, y + 4, w, "Ganzkörper-Animationen. Andere Chaos-Spieler in der Nähe sehen deine Emotes (über die Cosmetics-API). Bewegung bricht ein Emote ab.", theme().textFaint()));
         content.setContentHeight(y + 24 - content.y);
     }
 

@@ -15,6 +15,7 @@
     "MouseMixin",
     "OutlineMixin",
     "PlayerEntityRenderStateMixin",
+    "PlayerEntityModelMixin",
     "PlayerEntityRendererMixin",
     "PlayerListEntryMixin",
     "PlayerListHudMixin",
