@@ -153,10 +153,11 @@ public class CosmeticsScreen extends ChaosScreen {
         for (int i = 0; i < hats.size(); i++) {
             HatCatalog.Hat h = hats.get(i);
             int cx = x + (i % cols) * (cw + 8);
-            int cy = y + (i / cols) * 104;
-            content.add(new CosmeticCard(cx, cy, cw, 96, h.name(), h.description(), colorsOf(h), () -> cm.hatId().equals(h.id()), () -> { cm.setHat(h.id()); init(); }));
+            int cy = y + (i / cols) * 112;
+            Identifier hatTex = Identifier.of(ChaosClient.MOD_ID, "textures/previews/hats/" + h.id() + ".png");
+            content.add(new CosmeticCard(cx, cy, cw, 104, h.name(), h.description(), colorsOf(h), () -> cm.hatId().equals(h.id()), () -> { cm.setHat(h.id()); init(); }).preview(() -> hatTex, 96, 96, 44, 44));
         }
-        y += ((hats.size() + cols - 1) / cols) * 104 + 8;
+        y += ((hats.size() + cols - 1) / cols) * 112 + 8;
         content.setContentHeight(y + 8 - content.y);
     }
 
@@ -180,16 +181,17 @@ public class CosmeticsScreen extends ChaosScreen {
         for (int i = 0; i < list.size(); i++) {
             WingsCatalog.Wings wg = list.get(i);
             int cx = x + (i % cols) * (cw + 8);
-            int cy = y + (i / cols) * 104;
+            int cy = y + (i / cols) * 112;
             java.util.LinkedHashSet<Integer> set = new java.util.LinkedHashSet<>();
             for (int c : wg.colors()) set.add(c | 0xFF000000);
             int[] colors = new int[Math.min(6, set.size())];
             int k = 0;
             for (int c : set) { if (k >= colors.length) break; colors[k++] = c; }
             boolean locked = !cm.isUnlocked(wg.id());
-            content.add(new CosmeticCard(cx, cy, cw, 96, (locked ? "🔒 " : "") + wg.icon() + " " + wg.name(), locked ? "LEGENDÄR – Code im Launcher einlösen" : wg.description(), colors, () -> cm.wingsId().equals(wg.id()), () -> { cm.setWings(wg.id()); init(); }));
+            content.add(new CosmeticCard(cx, cy, cw, 104, (locked ? "🔒 " : "") + wg.icon() + " " + wg.name(), locked ? "LEGENDÄR – Code im Launcher einlösen" : wg.description(), colors, () -> cm.wingsId().equals(wg.id()), () -> { cm.setWings(wg.id()); init(); })
+                .preview(() -> wg.frameTexture(System.currentTimeMillis()), WingsCatalog.texW() * 2, WingsCatalog.texH() * 2, 88, 44));
         }
-        y += ((list.size() + cols - 1) / cols) * 104 + 8;
+        y += ((list.size() + cols - 1) / cols) * 112 + 8;
         content.setContentHeight(y + 8 - content.y);
     }
 
@@ -213,10 +215,11 @@ public class CosmeticsScreen extends ChaosScreen {
         for (int i = 0; i < effects.size(); i++) {
             EffectCatalog.Effect e = effects.get(i);
             int cx = x + (i % cols) * (cw + 8);
-            int cy = y + (i / cols) * 104;
-            content.add(new CosmeticCard(cx, cy, cw, 96, e.name(), e.description(), new int[]{e.color()}, () -> cm.effectId().equals(e.id()), () -> { cm.setEffect(e.id()); init(); }));
+            int cy = y + (i / cols) * 112;
+            Identifier effTex = Identifier.of(ChaosClient.MOD_ID, "textures/previews/effects/" + e.id() + ".png");
+            content.add(new CosmeticCard(cx, cy, cw, 104, e.name(), e.description(), new int[]{e.color()}, () -> cm.effectId().equals(e.id()), () -> { cm.setEffect(e.id()); init(); }).preview(() -> effTex, 96, 96, 44, 44));
         }
-        y += ((effects.size() + cols - 1) / cols) * 104 + 8;
+        y += ((effects.size() + cols - 1) / cols) * 112 + 8;
         content.setContentHeight(y + 8 - content.y);
     }
 
@@ -235,8 +238,14 @@ public class CosmeticsScreen extends ChaosScreen {
         private final int[] colors;
         private final java.util.function.BooleanSupplier isActive;
         private final Runnable apply;
+        /** Vorschau: Texturlieferant (null = Farbfelder), Texturgröße und Zeichenbreite/-höhe. */
+        private java.util.function.Supplier<Identifier> preview;
+        private int texW, texH, drawW, drawH;
         CosmeticCard(int x, int y, int w, int h, String name, String desc, int[] colors, java.util.function.BooleanSupplier isActive, Runnable apply) {
             super(x, y, w, h); this.name = name; this.desc = desc; this.colors = colors; this.isActive = isActive; this.apply = apply; tooltip(desc);
+        }
+        CosmeticCard preview(java.util.function.Supplier<Identifier> tex, int texW, int texH, int drawW, int drawH) {
+            this.preview = tex; this.texW = texW; this.texH = texH; this.drawW = drawW; this.drawH = drawH; return this;
         }
 
         @Override
@@ -246,18 +255,26 @@ public class CosmeticsScreen extends ChaosScreen {
             int r = theme().radius();
             Draw.roundedRect(ctx, x, y, w, h, r, hov ? theme().bg3() : theme().bg2());
             Draw.roundedBorder(ctx, x, y, w, h, r, active ? theme().accent() : theme().border());
-            // Farbfelder als Vorschau
-            int sw = Math.min(16, (w - 16) / Math.max(1, colors.length));
-            int total = sw * colors.length + (colors.length - 1) * 2;
-            int sx = x + (w - total) / 2;
-            for (int c : colors) {
-                Draw.shadow(ctx, sx, y + 12, sw, sw, 3, 80);
-                Draw.roundedRect(ctx, sx, y + 12, sw, sw, 3, c);
-                sx += sw + 2;
+            Identifier tex = preview != null ? preview.get() : null;
+            if (tex != null) {
+                // Echte Vorschau (Hut-Render, Effekt-Partikel, Wings-Textur – ggf. animiert)
+                int px = x + (w - drawW) / 2, py = y + 6;
+                ctx.drawTexture(RenderPipelines.GUI_TEXTURED, tex, px, py, 0f, 0f, drawW, drawH, texW, texH, texW, texH);
+            } else {
+                // Farbfelder als Vorschau
+                int sw = Math.min(16, (w - 16) / Math.max(1, colors.length));
+                int total = sw * colors.length + (colors.length - 1) * 2;
+                int sx = x + (w - total) / 2;
+                for (int c : colors) {
+                    Draw.shadow(ctx, sx, y + 12, sw, sw, 3, 80);
+                    Draw.roundedRect(ctx, sx, y + 12, sw, sw, 3, c);
+                    sx += sw + 2;
+                }
             }
-            ctx.drawTextWithShadow(font(), Draw.trim(name, w - 10), x + (w - font().getWidth(Draw.trim(name, w - 10))) / 2, y + 40, theme().text());
+            int ty = tex != null ? y + 6 + drawH + 4 : y + 40;
+            ctx.drawTextWithShadow(font(), Draw.trim(name, w - 10), x + (w - font().getWidth(Draw.trim(name, w - 10))) / 2, ty, theme().text());
             String d = Draw.trim(desc, w - 10);
-            ctx.drawText(font(), d, x + (w - font().getWidth(d)) / 2, y + 52, theme().textDim(), false);
+            ctx.drawText(font(), d, x + (w - font().getWidth(d)) / 2, ty + 12, theme().textDim(), false);
             String badge = active ? "AKTIV" : hov ? "ANWENDEN" : "CHAOS";
             int bw = font().getWidth(badge) + 12;
             Draw.roundedRect(ctx, x + (w - bw) / 2, y + h - 22, bw, 14, 7, active ? theme().accent() : hov ? theme().accentDark() : theme().bg3());
