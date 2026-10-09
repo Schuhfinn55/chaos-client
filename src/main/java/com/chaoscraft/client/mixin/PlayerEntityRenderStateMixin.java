@@ -1,6 +1,7 @@
 package com.chaoscraft.client.mixin;
 
 import com.chaoscraft.client.cosmetics.ChaosPlayerState;
+import com.chaoscraft.client.emotes.EmotePose;
 import net.minecraft.client.render.entity.state.PlayerEntityRenderState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -12,10 +13,13 @@ public class PlayerEntityRenderStateMixin implements ChaosPlayerState {
     @Unique private UUID chaos$uuid;
     @Unique private boolean chaos$airborne;
     @Unique private float chaos$velY;
+    @Unique private EmotePose chaos$emotePose;
 
     @Override public UUID chaos$uuid() { return chaos$uuid; }
     @Override public void chaos$setUuid(UUID uuid) { this.chaos$uuid = uuid; }
     @Override public boolean chaos$airborne() { return chaos$airborne; }
     @Override public float chaos$velY() { return chaos$velY; }
     @Override public void chaos$setMotion(boolean airborne, float velY) { this.chaos$airborne = airborne; this.chaos$velY = velY; }
+    @Override public EmotePose chaos$emotePose() { return chaos$emotePose; }
+    @Override public void chaos$setEmotePose(EmotePose pose) { this.chaos$emotePose = pose; }
 }
