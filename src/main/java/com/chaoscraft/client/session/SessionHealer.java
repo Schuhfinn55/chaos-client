@@ -110,13 +110,19 @@ public final class SessionHealer {
     }
 
     /** Tauscht Session, UserApiService und Profil-Schlüssel (Chat-Signierung) gegen das neue Token. */
-    public static boolean applySession(MinecraftClient mc, String token, String name) {
+    public static boolean applySession(MinecraftClient mc, String token, String name) { return applySession(mc, token, name, null); }
+
+    /** Wie oben, zusätzlich mit neuer UUID (Account-Wechsel): Session, Profil, UserApiService und Schlüssel tauschen. */
+    public static boolean applySession(MinecraftClient mc, String token, String name, UUID newUuid) {
         try {
             Session old = mc.getSession();
-            UUID uuid = old.getUuidOrNull();
+            UUID uuid = newUuid != null ? newUuid : old.getUuidOrNull();
             Session fresh = new Session(name, uuid, token, old.getClientId(), old.getXuid());
             MinecraftClientAccessor acc = (MinecraftClientAccessor) mc;
             acc.chaos$setSession(fresh);
+            if (newUuid != null) {
+                try { acc.chaos$setGameProfileFuture(java.util.concurrent.CompletableFuture.completedFuture(new com.mojang.authlib.yggdrasil.ProfileResult(new com.mojang.authlib.GameProfile(uuid, name)))); } catch (Throwable ignored) {}
+            }
             UserApiService api;
             try {
                 api = new YggdrasilAuthenticationService(mc.getNetworkProxy()).createUserApiService(token);

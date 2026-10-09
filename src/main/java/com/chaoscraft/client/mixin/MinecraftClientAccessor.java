@@ -1,6 +1,8 @@
 package com.chaoscraft.client.mixin;
 
 import com.mojang.authlib.minecraft.UserApiService;
+import com.mojang.authlib.yggdrasil.ProfileResult;
+import java.util.concurrent.CompletableFuture;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.session.ProfileKeys;
 import net.minecraft.client.session.Session;
@@ -14,4 +16,5 @@ public interface MinecraftClientAccessor {
     @Accessor("session") @Mutable void chaos$setSession(Session session);
     @Accessor("userApiService") @Mutable void chaos$setUserApiService(UserApiService service);
     @Accessor("profileKeys") @Mutable void chaos$setProfileKeys(ProfileKeys keys);
+    @Accessor("gameProfileFuture") @Mutable void chaos$setGameProfileFuture(CompletableFuture<ProfileResult> future);
 }

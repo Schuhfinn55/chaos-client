@@ -37,7 +37,7 @@ public class ChaosClient implements ClientModInitializer {
 
     public static final String MOD_ID = "chaosclient";
     public static final String NAME = "Chaos Client";
-    public static final String VERSION = "2.7.1";
+    public static final String VERSION = "2.7.2";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
     private static ChaosClient instance;
@@ -114,7 +114,10 @@ public class ChaosClient implements ClientModInitializer {
             });
         });
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> { keyManager.releaseAll(); writePresence(""); });
-        ScreenEvents.AFTER_INIT.register((client, screen, w, h) -> EscMenuModule.onScreenInit(screen));
+        ScreenEvents.AFTER_INIT.register((client, screen, w, h) -> {
+            EscMenuModule.onScreenInit(screen);
+            try { com.chaoscraft.client.session.AccountSwitcher.onScreenInit(screen); } catch (Throwable t) { LOGGER.warn("[ChaosClient] Account-Button: {}", t.toString()); }
+        });
 
         LOGGER.info("[{}] bereit – {} Module, Profil '{}'.", NAME, moduleManager.getModules().size(), configManager.getActiveProfile());
     }
