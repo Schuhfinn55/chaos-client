@@ -47,9 +47,16 @@ public final class EmoteAnimations {
             float w = sin(t * TAU * 2.2f);
             return new EmotePose().rArm(-150 + w * 6, 0, 35 + w * 28).lArm(-8, 0, -4).head(-8, -18, 0).body(0, -6, 0);
         }),
-        free("dab", "Dab", "Der Klassiker. Kopf in die Armbeuge, Arm nach oben.", "😎", 1.3f, false, t -> {
+        free("dab", "Dab", "Der Klassiker. Kopf in die Armbeuge, anderer Arm gestreckt nach oben.", "😎", 1.4f, false, t -> {
+            float p = t < 0.18f ? ease(t / 0.18f) : t < 1.05f ? 1 : 1 - ease((t - 1.05f) / 0.35f);
             float b = 1 + 0.03f * sin(t * TAU * 3);
-            return new EmotePose().head(28 * b, -42, -10).body(6, -18, 0).rArm(-105, -62, -35).lArm(-150, 20, -62).rLeg(-6, 0, 0).lLeg(6, 0, 0).offset(1.5f * sin(t * TAU * 3), 0);
+            return new EmotePose()
+                .rArm(-108 * p * b, 0, -56 * p)      // quer vors Gesicht (nach links oben)
+                .lArm(-138 * p * b, 0, -72 * p)      // gestreckt nach links oben, parallel dazu
+                .head(26 * p, -36 * p, -14 * p)      // Kopf nach links unten in die Armbeuge
+                .body(5 * p, -16 * p, -4 * p)
+                .rLeg(-5 * p, 0, 2 * p).lLeg(5 * p, 0, -2 * p)
+                .offset(1.2f * p * sin(t * TAU * 3), 0);
         }),
         free("dance", "Chaos Dance", "Hüften, Arme, Kopf – alles im Takt. Läuft, bis du dich bewegst.", "🕺", 6f, true, t -> {
             float a = sin(t * TAU * 1.9f), b = sin(t * TAU * 0.95f), c = cos(t * TAU * 1.9f);
@@ -187,12 +194,14 @@ public final class EmoteAnimations {
         }),
 
         /* ======================= Legendär (nur mit Code) ======================= */
-        legendary("breakdance", "Breakdance", "Auf dem Rücken, Beine kreisen, der ganze Körper rotiert – Windmill.", "🌪", 4f, true, t -> {
-            float w = t * TAU * 1.5f;
-            return new EmotePose().group(-84, 360f * (t / 4f))
-                .offset(8.5f + 1.2f * sin(w), 0)
-                .rLeg(-30 + 25 * sin(w), 0, 70 * cos(w)).lLeg(-30 - 25 * sin(w), 0, 70 * cos(w))
-                .rArm(-150, -20, 30).lArm(-150, 20, -30).head(-30, 0, 0).body(0, 0, 0);
+        legendary("breakdance", "Breakdance", "Backspin: auf dem Rücken um die eigene Achse, Beine als Schere, Arme weit.", "🌪", 3f, true, t -> {
+            float w = t * TAU * 2f;
+            float sc = sin(w);
+            return new EmotePose().group(-80, 360f * (t / 1.5f))
+                .offset(8.8f, 0)
+                .rLeg(-55 - 15 * sc, 0, 38 + 10 * sc).lLeg(-55 + 15 * sc, 0, -38 + 10 * sc)
+                .rArm(-10, 0, 88).lArm(-10, 0, -88)
+                .head(-22, 0, 0).body(0, 0, 0);
         }),
         legendary("chaos-rave", "Chaos Rave", "Volle Energie: Arme fliegen, Körper dreht, nichts steht still.", "🔥", 4f, true, t -> {
             float a = sin(t * TAU * 3f), b = cos(t * TAU * 3f), s = sin(t * TAU * 1.5f);
