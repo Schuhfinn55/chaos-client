@@ -54,6 +54,9 @@ public final class CosmeticsConfig {
     public String wingsId = "";
     /** Per Code freigeschaltete exklusive Wings (vom Launcher exportiert, von der API bestätigt). */
     public final List<String> unlocks = new ArrayList<>();
+    /** Belegung des Emote-Rads aus dem Launcher (8 Slots) + Zeitstempel */
+    public final List<String> emoteWheel = new ArrayList<>();
+    public long emoteWheelUpdatedAt = 0;
 
     public static CosmeticsConfig load(Path dir) {
         CosmeticsConfig cfg = new CosmeticsConfig();
@@ -76,6 +79,8 @@ public final class CosmeticsConfig {
             cfg.effectId = getStr(root, "effect", "");
             cfg.wingsId = getStr(root, "wings", "");
             if (root.has("unlocks") && root.get("unlocks").isJsonArray()) for (JsonElement e : root.getAsJsonArray("unlocks")) if (e.isJsonPrimitive()) cfg.unlocks.add(e.getAsString());
+            if (root.has("emoteWheel") && root.get("emoteWheel").isJsonArray()) for (JsonElement e : root.getAsJsonArray("emoteWheel")) cfg.emoteWheel.add(e.isJsonPrimitive() ? e.getAsString() : "");
+            if (root.has("emoteWheelUpdatedAt") && root.get("emoteWheelUpdatedAt").isJsonPrimitive()) try { cfg.emoteWheelUpdatedAt = root.get("emoteWheelUpdatedAt").getAsLong(); } catch (Exception ignored) {}
             if (root.has("activeCape") && root.get("activeCape").isJsonObject()) {
                 JsonObject ac = root.getAsJsonObject("activeCape");
                 cfg.activeCapeId = getStr(ac, "id", "");

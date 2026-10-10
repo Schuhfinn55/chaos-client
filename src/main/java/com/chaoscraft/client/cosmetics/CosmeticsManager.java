@@ -127,7 +127,11 @@ public final class CosmeticsManager {
         if (uuid == null) return null;
         String key = uuid.toString().replace("-", "").toLowerCase(Locale.ROOT);
         CosmeticsConfig cfg = CapeManager.get().config();
-        if (key.equals(cfg.ownerUuid)) return hatId.isEmpty() ? null : hatId;
+        if (key.equals(cfg.ownerUuid)) {
+            if (hatId.isEmpty()) return null;
+            HatCatalog.Hat h = HatCatalog.byId(hatId);
+            return h != null && h.exclusive() && !cfg.unlocks.contains("hat:" + hatId) ? null : hatId;
+        }
         String local = playerHats.get(key);
         return local != null ? local : remoteHats.get(key);
     }
@@ -136,7 +140,11 @@ public final class CosmeticsManager {
         if (uuid == null) return null;
         String key = uuid.toString().replace("-", "").toLowerCase(Locale.ROOT);
         CosmeticsConfig cfg = CapeManager.get().config();
-        if (key.equals(cfg.ownerUuid)) return effectId.isEmpty() ? null : effectId;
+        if (key.equals(cfg.ownerUuid)) {
+            if (effectId.isEmpty()) return null;
+            EffectCatalog.Effect ef = EffectCatalog.byId(effectId);
+            return ef != null && ef.exclusive() && !cfg.unlocks.contains("effect:" + effectId) ? null : effectId;
+        }
         String local = playerEffects.get(key);
         return local != null ? local : remoteEffects.get(key);
     }

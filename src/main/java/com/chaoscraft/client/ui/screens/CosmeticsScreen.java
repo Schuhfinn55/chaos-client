@@ -114,19 +114,40 @@ public class CosmeticsScreen extends ChaosScreen {
         content.setContentHeight(y + 16 - content.y);
     }
 
+    private static int firstFreeSlot(com.chaoscraft.client.modules.cosmetics.EmotesModule mod) {
+        java.util.List<String> w = mod.wheel();
+        for (int i = 0; i < w.size(); i++) if (w.get(i).isEmpty()) return i;
+        return com.chaoscraft.client.modules.cosmetics.EmotesModule.SLOTS - 1;
+    }
+
     private void buildEmotes() {
         EmoteManager em = ChaosClient.get().getEmotes();
         EmotesModule mod = ChaosClient.get().getModuleManager().get(EmotesModule.class);
         int x = content.x + 8, w = content.w - 24, y = content.y + 4;
         content.add(new Label(x, y, w, "EMOTES  §8· Taste frei konfigurierbar · Emote-Rad: " + (mod != null ? KeybindSetting.keyName(mod.getKeyCode()) : "—"), theme().accentLight()));
         y += 16;
+        java.util.List<String> wheel = mod != null ? mod.wheel() : java.util.List.of();
         for (EmoteManager.Emote e : em.all()) {
             final EmoteManager.Emote emote = e;
-            content.add(new Label(x, y + 2, w - 190, e.name(), theme().text()));
-            content.add(new Label(x, y + 12, w - 190, e.description(), theme().textDim()));
+            boolean legendary = e instanceof com.chaoscraft.client.emotes.EmoteAnimations.Animated a && a.exclusive();
+            boolean unlocked = em.isUnlocked(e);
+            int slot = wheel.indexOf(e.id());
+            String icon = e instanceof com.chaoscraft.client.emotes.EmoteAnimations.Animated an ? an.icon() + " " : "";
+            content.add(new Label(x, y + 2, w - 250, icon + e.name() + (legendary ? " §6★" : "") + (slot >= 0 ? " §8· Rad " + (slot + 1) : ""), unlocked ? (legendary ? 0xFFF5C342 : theme().text()) : theme().textFaint()));
+            content.add(new Label(x, y + 12, w - 250, unlocked ? e.description() : "Legendär – Code im Chaos Launcher unter Cosmetics › Emotes einlösen", theme().textDim()));
             KeybindSetting ks = mod != null ? mod.keyFor(e.id()) : null;
-            if (ks != null) content.add(new KeybindWidget(x + w - 180, y + 3, 90, ks));
-            content.add(new Button(x + w - 84, y + 3, 76, 16, em.active() == e ? "Läuft …" : "Abspielen", () -> { em.play(emote); init(); }).style(Button.Style.PRIMARY));
+            if (ks != null) content.add(new KeybindWidget(x + w - 240, y + 3, 80, ks));
+            if (mod != null && unlocked) {
+                final int cur = slot;
+                content.add(new Button(x + w - 154, y + 3, 66, 16, cur >= 0 ? "Rad " + (cur + 1) + " ▸" : "Ins Rad", () -> {
+                    int next = cur < 0 ? firstFreeSlot(mod) : (cur + 1) % com.chaoscraft.client.modules.cosmetics.EmotesModule.SLOTS;
+                    mod.setSlot(next, emote.id());
+                    ChaosClient.get().getNotifications().info(emote.name() + " liegt auf Slot " + (next + 1));
+                    init();
+                }).tooltip(cur >= 0 ? "Klick: nächster Slot" : "In den ersten freien Slot des Emote-Rads legen"));
+            }
+            Button play = content.add(new Button(x + w - 84, y + 3, 76, 16, !unlocked ? "Gesperrt" : em.active() == e ? "Läuft …" : "Abspielen", () -> { em.play(emote); init(); }).style(unlocked ? Button.Style.PRIMARY : Button.Style.GHOST));
+            play.enabled = unlocked;
             y += 28;
         }
         content.add(new Label(x, y + 4, w, "Ganzkörper-Animationen. Andere Chaos-Spieler in der Nähe sehen deine Emotes (über die Cosmetics-API). Bewegung bricht ein Emote ab.", theme().textFaint()));

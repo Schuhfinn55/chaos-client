@@ -2,7 +2,10 @@ package com.chaoscraft.client.emotes;
 
 import com.chaoscraft.client.ChaosClient;
 import com.chaoscraft.client.config.SharedData;
+import com.chaoscraft.client.cosmetics.CapeManager;
+import com.chaoscraft.client.cosmetics.CosmeticsConfig;
 import com.chaoscraft.client.cosmetics.CosmeticsManager;
+import com.chaoscraft.client.modules.cosmetics.EmotesModule;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -64,9 +67,12 @@ public final class EmoteManager {
         ClientTickEvents.END_CLIENT_TICK.register(this::onTick);
     }
 
+    private int wheelTick;
+
     private void onTick(MinecraftClient mc) {
         if (mc.player == null || mc.world == null) { playing.clear(); return; }
         long now = System.currentTimeMillis();
+        if (++wheelTick % 100 == 1) adoptLauncherWheel();
         // Eigenes Emote: Ende / Abbruch durch Bewegung
         Playing own = playing.get(mc.player.getUuid());
         if (own != null) {
@@ -123,9 +129,29 @@ public final class EmoteManager {
         return null;
     }
 
+    /** Legendäre Emotes nur mit Freischaltung "emote:<id>" (Code im Launcher). */
+    public boolean isUnlocked(Emote e) {
+        if (!(e instanceof EmoteAnimations.Animated a) || !a.exclusive()) return true;
+        return CapeManager.get().config().unlocks.contains("emote:" + a.id());
+    }
+
+    /** Rad-Belegung aus dem Launcher übernehmen, wenn sie neuer ist als die im Spiel. */
+    private void adoptLauncherWheel() {
+        try {
+            EmotesModule mod = ChaosClient.get().getModuleManager().get(EmotesModule.class);
+            CosmeticsConfig cfg = CapeManager.get().config();
+            if (mod == null || cfg.emoteWheel.isEmpty()) return;
+            if (cfg.emoteWheelUpdatedAt > mod.wheelUpdatedAt()) mod.applyWheel(cfg.emoteWheel, cfg.emoteWheelUpdatedAt, false);
+        } catch (Exception ignored) {}
+    }
+
     public void play(Emote e) {
         MinecraftClient mc = MinecraftClient.getInstance();
         if (mc.player == null || !(e instanceof EmoteAnimations.Animated a)) return;
+        if (!isUnlocked(a)) {
+            ChaosClient.get().getNotifications().warn(a.name() + " ist legendär – Code im Chaos Launcher unter Cosmetics › Emotes einlösen.");
+            return;
+        }
         long now = System.currentTimeMillis();
         playing.put(mc.player.getUuid(), new Playing(a, now, now));
         startPos = mc.player.getEntityPos();

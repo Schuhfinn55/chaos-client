@@ -107,6 +107,47 @@ public final class EffectTicker {
             }
             case "smoke" -> { if (tick % 2 == 0) add(mc, ParticleTypes.SMOKE, x + off(0.5), y + RNG.nextDouble() * h * 0.8, z + off(0.5), 0, 0.03, 0); }
             case "totem" -> { if (tick % 2 == 0) add(mc, ParticleTypes.TOTEM_OF_UNDYING, x, y + h * 0.5, z, off(0.25), RNG.nextDouble() * 0.3, off(0.25)); }
+            // ---- Legendär
+            case "chaos-nova" -> {
+                int ph = tick % 40;
+                if (ph < 10) {
+                    double r = 0.4 + ph * 0.22;
+                    for (int i = 0; i < 14; i++) {
+                        double a = i / 14.0 * Math.PI * 2 + ph * 0.1;
+                        add(mc, new DustParticleEffect(i % 2 == 0 ? 0xFF1F3D : 0x111113, 1.5f), x + Math.cos(a) * r, y + 0.15 + ph * 0.02, z + Math.sin(a) * r, Math.cos(a) * 0.06, 0.01, Math.sin(a) * 0.06);
+                    }
+                    if (ph == 0) { for (int i = 0; i < 8; i++) add(mc, ParticleTypes.LAVA, x + off(0.3), y + h * 0.5, z + off(0.3), 0, 0.1, 0); add(mc, ParticleTypes.EXPLOSION, x, y + h * 0.5, z, 0, 0, 0); }
+                } else if (ph % 2 == 0) {
+                    add(mc, ParticleTypes.FLAME, x + off(0.5), y + RNG.nextDouble() * h, z + off(0.5), 0, 0.03, 0);
+                    add(mc, ParticleTypes.ELECTRIC_SPARK, x + off(0.7), y + RNG.nextDouble() * h, z + off(0.7), off(0.05), 0.02, off(0.05));
+                }
+            }
+            case "phoenix-fire" -> {
+                double yaw = Math.toRadians(p.getBodyYaw());
+                double bx = -Math.sin(yaw), bz = Math.cos(yaw), sx = Math.cos(yaw), sz = Math.sin(yaw);
+                double flap = 0.5 + 0.5 * Math.sin(tick * 0.18);
+                for (int s = -1; s <= 1; s += 2) {
+                    for (int i = 0; i < 2; i++) {
+                        double spread = 0.3 + RNG.nextDouble() * (0.8 + flap * 0.6);
+                        double px = x - bx * 0.3 + sx * s * spread, pz = z - bz * 0.3 + sz * s * spread;
+                        double py = y + 0.9 + RNG.nextDouble() * 0.9 + spread * 0.5;
+                        add(mc, RNG.nextInt(3) == 0 ? new DustParticleEffect(0xFBBF24, 1.2f) : ParticleTypes.FLAME, px, py, pz, -bx * 0.03, 0.04, -bz * 0.03);
+                    }
+                }
+                if (tick % 3 == 0) add(mc, ParticleTypes.LAVA, x + off(0.6), y + h + 0.6, z + off(0.6), 0, -0.05, 0);
+                if (tick % 2 == 0) add(mc, new DustParticleEffect(0xF97316, 1.6f), x + off(0.4), y + 0.1, z + off(0.4), 0, 0.08, 0);
+            }
+            case "void-storm" -> {
+                for (int i = 0; i < 3; i++) {
+                    double a = tick * 0.3 + i * Math.PI * 2 / 3;
+                    double r = 1.0 + 0.3 * Math.sin(tick * 0.08 + i);
+                    double yy = y + 0.2 + ((tick * 2.5 + i * 15) % 40) / 40.0 * (h + 0.3);
+                    add(mc, new DustParticleEffect(i == 0 ? 0x7C3AED : i == 1 ? 0x4C1D95 : 0xC4B5FD, 1.4f), x + Math.cos(a) * r, yy, z + Math.sin(a) * r, -Math.sin(a) * 0.08, 0.02, Math.cos(a) * 0.08);
+                }
+                if (tick % 2 == 0) add(mc, ParticleTypes.REVERSE_PORTAL, x + off(0.9), y + 0.05, z + off(0.9), 0, 0.3, 0);
+                if (tick % 5 == 0) add(mc, ParticleTypes.END_ROD, x + off(0.5), y + RNG.nextDouble() * h, z + off(0.5), off(0.02), 0.02, off(0.02));
+                if (tick % 30 == 0) add(mc, ParticleTypes.SONIC_BOOM, x, y + h * 0.5, z, 0, 0, 0);
+            }
             // ---- Premium
             case "chaos-storm" -> {
                 double a = (tick * 0.22) % (Math.PI * 2);

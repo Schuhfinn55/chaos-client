@@ -10,11 +10,15 @@ public final class EffectCatalog {
 
     public enum Pattern { RING, RISE, ORBIT, RAIN, BURST, FEET }
 
-    public record Effect(String id, String name, String description, String icon, int color, Pattern pattern) {}
+    public record Effect(String id, String name, String description, String icon, int color, Pattern pattern, boolean exclusive) {}
 
     private static final Map<String, Effect> EFFECTS = new LinkedHashMap<>();
 
     static {
+        // ---- Legendär (nur mit Code, Freischaltung "effect:<id>")
+        addLegendary("chaos-nova", "Chaos-Nova", "Pulsierende Explosionsringe aus Glut, Funken und schwarzem Rauch – alle zwei Sekunden eine Druckwelle.", "💥", 0xff1f3d, Pattern.BURST);
+        addLegendary("phoenix-fire", "Phönixfeuer", "Flammenschwingen aus Feuer und Gold, die hinter dir aufsteigen und Glut regnen lassen.", "🔥", 0xf97316, Pattern.RISE);
+        addLegendary("void-storm", "Void-Sturm", "Drei violette Wirbel aus dem Nichts, die um dich rasen, mit Endstaub und Rissen.", "🌀", 0x7c3aed, Pattern.RING);
         // ---- Premium / neu
         add("chaos-storm", "Chaos-Sturm", "Doppelte Helix aus rotem und schwarzem Staub, die um dich aufsteigt.", "🌪", 0xe11d2e, Pattern.RING);
         add("lightning", "Gewitter", "Elektrische Entladungen und helle Blitzsäulen um dich herum.", "⚡", 0x7dd3fc, Pattern.BURST);
@@ -44,7 +48,10 @@ public final class EffectCatalog {
     }
 
     private static void add(String id, String name, String desc, String icon, int color, Pattern p) {
-        EFFECTS.put(id, new Effect(id, name, desc, icon, 0xFF000000 | color, p));
+        EFFECTS.put(id, new Effect(id, name, desc, icon, 0xFF000000 | color, p, false));
+    }
+    private static void addLegendary(String id, String name, String desc, String icon, int color, Pattern p) {
+        EFFECTS.put(id, new Effect(id, name, desc, icon, 0xFF000000 | color, p, true));
     }
 
     public static List<Effect> all() { return List.copyOf(EFFECTS.values()); }
