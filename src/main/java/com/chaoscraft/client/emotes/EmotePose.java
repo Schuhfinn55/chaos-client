@@ -34,6 +34,14 @@ public final class EmotePose {
     public EmotePose offset(float y, float z) { offsetY = y; offsetZ = z; return this; }
     public EmotePose group(float pitchDeg, float yawDeg) { groupPitch = pitchDeg; groupYaw = yawDeg; return this; }
 
+    /** Winkel auf −180..180 normieren (kürzester Weg beim Mischen). */
+    public static float wrap(float deg) {
+        deg %= 360f;
+        if (deg >= 180f) deg -= 360f;
+        if (deg < -180f) deg += 360f;
+        return deg;
+    }
+
     /** Lineare Mischung zweier Posen (für Ein-/Ausblenden). */
     public static EmotePose mix(EmotePose a, EmotePose b, float t) {
         EmotePose o = new EmotePose();
@@ -47,8 +55,8 @@ public final class EmotePose {
         }
         o.offsetY = a.offsetY + (b.offsetY - a.offsetY) * t;
         o.offsetZ = a.offsetZ + (b.offsetZ - a.offsetZ) * t;
-        o.groupPitch = a.groupPitch + (b.groupPitch - a.groupPitch) * t;
-        o.groupYaw = a.groupYaw + (b.groupYaw - a.groupYaw) * t;
+        o.groupPitch = a.groupPitch + wrap(b.groupPitch - a.groupPitch) * t;
+        o.groupYaw = a.groupYaw + wrap(b.groupYaw - a.groupYaw) * t;
         return o;
     }
 }

@@ -106,12 +106,12 @@ public final class EmoteAnimations {
         }),
         free("salute", "Salut", "Zackiger Gruß an die Stirn.", "🫡", 1.8f, false, t -> {
             float p = env(t, 0.25f, 1.4f, 0.4f);
-            return new EmotePose().rArm(-140 * p, -55 * p, 10 * p).lArm(0, 0, 2).head(-4 * p, 0, 0).body(-2 * p, 0, 0);
+            return new EmotePose().rArm(-150 * p, 0, -42 * p).lArm(0, 0, 2).head(-6 * p, 0, 0).body(-2 * p, 0, 0);
         }),
         free("facepalm", "Facepalm", "Hand ins Gesicht, Kopf runter.", "🤦", 2.2f, false, t -> {
             float p = env(t, 0.3f, 1.7f, 0.5f);
             float shake = sin(t * TAU * 1.5f) * 6 * p;
-            return new EmotePose().rArm(-150 * p, 22 * p, -14 * p).head(28 * p, shake, 0).body(6 * p, 0, 0).lArm(0, 0, 3);
+            return new EmotePose().rArm(-152 * p, 0, -34 * p).head(26 * p, shake, 0).body(6 * p, 0, 0).lArm(0, 0, 3);
         }),
         free("headbang", "Headbang", "Kopf schütteln, Arme oben – Metal.", "🤘", 4f, true, t -> {
             float h = sin(t * TAU * 2.6f);
@@ -120,7 +120,7 @@ public final class EmoteAnimations {
         }),
         free("think", "Nachdenken", "Hand ans Kinn, Blick in die Ferne.", "🤔", 2.4f, false, t -> {
             float p = env(t, 0.3f, 2.0f, 0.4f);
-            return new EmotePose().rArm(-120 * p, 12 * p, -28 * p).head(-6 * p, 24 * p * sin(t * TAU * 0.4f), 10 * p).body(0, 8 * p, 0);
+            return new EmotePose().rArm(-122 * p, 0, -32 * p).head(-6 * p, 24 * p * sin(t * TAU * 0.4f), 10 * p).body(0, 8 * p, 0);
         }),
 
         /* ======================= Neu (frei) ======================= */
@@ -183,7 +183,7 @@ public final class EmoteAnimations {
         }),
         free("cry", "Weinen", "Hände vors Gesicht, Schultern zucken.", "😭", 3.2f, false, t -> {
             float p = env(t, 0.4f, 2.5f, 0.6f), s = sin(t * TAU * 4f);
-            return new EmotePose().rArm(-148 * p, 24 * p, -16 * p).lArm(-148 * p, -24 * p, 16 * p).head(26 * p, 0, 0).body((9 + 2 * s) * p, 0, 0).offset(0.8f * p, 0);
+            return new EmotePose().rArm(-150 * p, 0, -36 * p).lArm(-150 * p, 0, 36 * p).head(24 * p, 0, 0).body((9 + 2 * s) * p, 0, 0).offset(0.8f * p, 0);
         }),
 
         /* ======================= Legendär (nur mit Code) ======================= */
