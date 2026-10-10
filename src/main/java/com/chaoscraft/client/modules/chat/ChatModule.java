@@ -32,6 +32,7 @@ public class ChatModule extends Module {
     private final ColorSetting highlightColor = add(new ColorSetting("Highlight-Farbe", "Farbe hervorgehobener Nachrichten.", 0xFFE11D2E, false));
     private final BooleanSetting highlightSound = add(new BooleanSetting("Highlight-Sound", "Ton bei Hervorhebung.", true));
     private final BooleanSetting filterAds = add(new BooleanSetting("Filter: Werbung", "Nachrichten mit Server-Werbung ausblenden.", false));
+    private final BooleanSetting stackDuplicates = add(new BooleanSetting("Duplikate stapeln", "Gleiche Nachrichten hintereinander als „(x3)“ zusammenfassen.", true));
     private final BooleanSetting filterSpam = add(new BooleanSetting("Filter: Spam", "Identische Nachrichten kurz hintereinander ausblenden.", false));
     private final BooleanSetting filterJoinQuit = add(new BooleanSetting("Filter: Join/Quit", "Beitritts-/Verlassen-Meldungen ausblenden.", false));
     private final BooleanSetting filterSystem = add(new BooleanSetting("Filter: System", "Systemnachrichten (ohne Spielername) ausblenden.", false));
@@ -45,6 +46,9 @@ public class ChatModule extends Module {
 
     private String lastMessage = "";
     private long lastMessageAt;
+    private String dupRaw = "";
+    private int dupCount;
+    private long dupAt;
     private int lastOpacity = -1, lastScale = -1, lastWidth = -1;
 
     public ChatModule() {
@@ -58,6 +62,15 @@ public class ChatModule extends Module {
         if (opacity.getInt() != lastOpacity) { mc.options.getChatOpacity().setValue(opacity.getInt() / 100.0); lastOpacity = opacity.getInt(); }
         if (scale.getInt() != lastScale) { mc.options.getChatScale().setValue(scale.getInt() / 100.0); lastScale = scale.getInt(); }
         if (width.getInt() != lastWidth) { mc.options.getChatWidth().setValue(width.getInt() / 100.0); lastWidth = width.getInt(); }
+    }
+
+    /** Zähler für identische Folgenachrichten: 1 = neu, >1 = Wiederholung (vorherige Zeile wird ersetzt). */
+    public int duplicateCount(String raw) {
+        if (!isEnabled() || !stackDuplicates.isEnabled()) return 1;
+        long now = System.currentTimeMillis();
+        if (raw.equals(dupRaw) && now - dupAt < 120_000) { dupCount++; dupAt = now; return dupCount; }
+        dupRaw = raw; dupCount = 1; dupAt = now;
+        return 1;
     }
 
     /** Liefert null = Nachricht ausblenden, sonst die (ggf. veränderte) Nachricht. */

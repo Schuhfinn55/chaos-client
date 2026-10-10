@@ -30,7 +30,7 @@ public class ServerInfoHud extends HudModule {
         if (fps.isEnabled()) l.add("FPS " + mc.getCurrentFps());
         if (ping.isEnabled() && sm.ping() >= 0) l.add("PING " + sm.ping() + "ms");
         if (tps.isEnabled() && mc.getNetworkHandler() != null) l.add("TPS " + sm.tps());
-        if (server.isEnabled() && !sm.currentAddress().isEmpty()) l.add(sm.currentAddress());
+        if (server.isEnabled() && !sm.currentAddress().isEmpty()) l.add(com.chaoscraft.client.modules.misc.StreamerModeModule.hidesIp() ? "Server: ***" : sm.currentAddress());
         if (players.isEnabled() && mc.getNetworkHandler() != null) l.add(sm.playerCount() + " Spieler");
         if (l.isEmpty()) l.add("Server Info");
         return l;

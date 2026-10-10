@@ -19,7 +19,20 @@
     "PlayerEntityRendererMixin",
     "PlayerListEntryMixin",
     "PlayerListHudMixin",
-    "ZoomMixin"
+    "ZoomMixin",
+    "GameRendererAccessor",
+    "WorldAccessor",
+    "ChatHudAccessor",
+    "OverlayTextureAccessor",
+    "FogRendererAccessor",
+    "ArmorFeatureRendererMixin",
+    "HurtCamMixin",
+    "FireOverlayMixin",
+    "ParticleManagerMixin",
+    "ClientPlayerEntityMixin",
+    "ScreenBackgroundMixin",
+    "ToastManagerMixin",
+    "AttackMixin"
   ],
   "injectors": {
     "defaultRequire": 1

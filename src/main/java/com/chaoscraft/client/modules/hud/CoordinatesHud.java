@@ -77,6 +77,7 @@ public class CoordinatesHud extends HudModule {
     public void renderContent(DrawContext ctx, int x, int y) {
         int w = getContentWidth();
         int cy = y;
+        if (com.chaoscraft.client.modules.misc.StreamerModeModule.hidesCoords()) { text(ctx, "Versteckt (Streamer Mode)", x, cy, w, textColor.withAlpha(0.6)); return; }
         for (String s : lines()) { text(ctx, s, x, cy, w); cy += 10; }
     }
 }

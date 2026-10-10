@@ -144,6 +144,9 @@ public final class SessionHealer {
         }
     }
 
+    /** Zum zuletzt verbundenen Server neu verbinden (Auto Reconnect, Session-Heilung). */
+    public static void reconnectLast(MinecraftClient mc) { reconnect(mc); }
+
     private static void reconnect(MinecraftClient mc) {
         ServerAddress addr = lastAddress;
         ServerInfo info = lastInfo;

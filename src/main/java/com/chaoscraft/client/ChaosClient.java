@@ -37,7 +37,7 @@ public class ChaosClient implements ClientModInitializer {
 
     public static final String MOD_ID = "chaosclient";
     public static final String NAME = "Chaos Client";
-    public static final String VERSION = "2.7.2";
+    public static final String VERSION = "2.7.3";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
     private static ChaosClient instance;
@@ -80,6 +80,8 @@ public class ChaosClient implements ClientModInitializer {
         keyManager = new KeyManager(moduleManager);
         keyManager.register();
         HudRenderer.init();
+        com.chaoscraft.client.render.WorldProjector.register();
+        com.chaoscraft.client.modules.pvp.HitBoxModule.registerRender();
         ChaosCommands.register();
         CapeManager.get().init(MinecraftClient.getInstance());
         com.chaoscraft.client.cosmetics.EffectTicker.register();
@@ -105,6 +107,7 @@ public class ChaosClient implements ClientModInitializer {
         });
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
             SharedData.reload();
+            com.chaoscraft.client.modules.hud.UptimeHud.onJoin();
             client.execute(() -> {
                 writePresence(client.getCurrentServerEntry() != null ? client.getCurrentServerEntry().address : "");
                 EscMenuModule.resetHint();
@@ -116,6 +119,12 @@ public class ChaosClient implements ClientModInitializer {
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> { keyManager.releaseAll(); writePresence(""); });
         ScreenEvents.AFTER_INIT.register((client, screen, w, h) -> {
             EscMenuModule.onScreenInit(screen);
+            try {
+                var ar = moduleManager.get(com.chaoscraft.client.modules.general.AutoReconnectModule.class);
+                if (ar != null) ar.onScreenInit(screen);
+                var cd = moduleManager.get(com.chaoscraft.client.modules.general.ConfirmDisconnectModule.class);
+                if (cd != null) cd.onScreenInit(screen);
+            } catch (Throwable t) { LOGGER.warn("[ChaosClient] Screen-Hook: {}", t.toString()); }
             try { com.chaoscraft.client.session.AccountSwitcher.onScreenInit(screen); } catch (Throwable t) { LOGGER.warn("[ChaosClient] Account-Button: {}", t.toString()); }
         });
 

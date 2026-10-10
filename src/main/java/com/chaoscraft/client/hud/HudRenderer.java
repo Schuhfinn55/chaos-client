@@ -2,6 +2,7 @@ package com.chaoscraft.client.hud;
 
 import com.chaoscraft.client.ChaosClient;
 import com.chaoscraft.client.core.HudModule;
+import com.chaoscraft.client.core.HudOverlay;
 import com.chaoscraft.client.core.Module;
 import com.chaoscraft.client.modules.pvp.CrosshairModule;
 import com.chaoscraft.client.ui.screens.HudEditorScreen;
@@ -50,6 +51,7 @@ public final class HudRenderer {
                     try {
                         if (mod instanceof HudModule hud) hud.renderHud(ctx);
                         else if (mod instanceof CrosshairModule ch) ch.render(ctx);
+                        if (mod instanceof HudOverlay ov) ov.renderOverlay(ctx);
                     } catch (Exception e) {
                         ChaosClient.LOGGER.warn("[ChaosClient] HUD-Fehler in {}: {}", mod.getName(), e.toString());
                     }

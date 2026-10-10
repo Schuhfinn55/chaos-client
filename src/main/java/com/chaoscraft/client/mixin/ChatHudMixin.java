@@ -33,9 +33,15 @@ public abstract class ChatHudMixin {
             if (gg != null && gg.isEnabled()) gg.onChatMessage(message.getString());
             ChatModule chat = cc.getModuleManager().get(ChatModule.class);
             if (chat == null || !chat.isEnabled()) return;
+            int dup = chat.duplicateCount(message.getString());
+            if (dup > 1) {
+                var msgs = ((ChatHudAccessor) this).chaos$messages();
+                if (!msgs.isEmpty()) { msgs.remove(0); ((ChatHudAccessor) this).chaos$refresh(); }
+                message = message.copy().append(Text.literal(" (x" + dup + ")").styled(s -> s.withColor(net.minecraft.text.TextColor.fromRgb(0x8A8A8A))));
+            }
             Text processed = chat.process(message);
             if (processed == null) { ci.cancel(); return; }
-            if (processed != message) {
+            if (processed != message || dup > 1) {
                 chaosclient$reentrant = true;
                 try {
                     ((ChatHud) (Object) this).addMessage(processed, signature, indicator);

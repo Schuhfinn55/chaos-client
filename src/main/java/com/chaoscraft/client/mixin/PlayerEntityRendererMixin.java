@@ -12,6 +12,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
  * Merkt sich die UUID des gerenderten Spielers im Render-State (für Hut-/Wings-Renderer), friert die
@@ -35,6 +36,18 @@ public class PlayerEntityRendererMixin {
         }
         // Chaos-Badge vor dem Namen über dem Kopf
         try { state.displayName = com.chaoscraft.client.cosmetics.BadgeManager.decorate(entity.getUuid(), state.displayName); } catch (Exception ignored) {}
+    }
+
+    /** Name Tags: eigenen Namen in der dritten Person anzeigen. */
+    @Inject(method = "hasLabel(Lnet/minecraft/entity/PlayerLikeEntity;D)Z", at = @At("RETURN"), cancellable = true)
+    private void chaosclient$ownLabel(PlayerLikeEntity entity, double distance, CallbackInfoReturnable<Boolean> cir) {
+        if (cir.getReturnValue()) return;
+        net.minecraft.client.MinecraftClient mc = net.minecraft.client.MinecraftClient.getInstance();
+        if (entity != mc.player || mc.options.getPerspective().isFirstPerson()) return;
+        ChaosClient cc = ChaosClient.get();
+        if (cc == null || cc.getModuleManager() == null) return;
+        var mod = cc.getModuleManager().get(com.chaoscraft.client.modules.player.NameTagsModule.class);
+        if (mod != null && mod.showOwn()) cir.setReturnValue(true);
     }
 
     /**

@@ -44,6 +44,34 @@ import com.chaoscraft.client.modules.social.SocialModule;
 import com.chaoscraft.client.modules.world.BlockOverlayModule;
 import com.chaoscraft.client.modules.world.TimeChangerModule;
 import com.chaoscraft.client.modules.world.WaypointsModule;
+import com.chaoscraft.client.modules.hud.DayCounterHud;
+import com.chaoscraft.client.modules.hud.UptimeHud;
+import com.chaoscraft.client.modules.hud.SaturationHud;
+import com.chaoscraft.client.modules.hud.CompassHud;
+import com.chaoscraft.client.modules.hud.InventoryHud;
+import com.chaoscraft.client.modules.hud.ItemCounterHud;
+import com.chaoscraft.client.modules.pvp.ComboCounterHud;
+import com.chaoscraft.client.modules.pvp.ReachDisplayHud;
+import com.chaoscraft.client.modules.pvp.HitBoxModule;
+import com.chaoscraft.client.modules.pvp.HitColorModule;
+import com.chaoscraft.client.modules.pvp.HealthIndicatorsModule;
+import com.chaoscraft.client.modules.world.TntTimerModule;
+import com.chaoscraft.client.modules.world.LightLevelModule;
+import com.chaoscraft.client.modules.world.WeatherChangerModule;
+import com.chaoscraft.client.modules.world.ArrowTrailModule;
+import com.chaoscraft.client.modules.player.HideArmorModule;
+import com.chaoscraft.client.modules.player.NameTagsModule;
+import com.chaoscraft.client.modules.player.NoHurtCamModule;
+import com.chaoscraft.client.modules.player.LowFireModule;
+import com.chaoscraft.client.modules.player.SlotLocksModule;
+import com.chaoscraft.client.modules.general.NoFogModule;
+import com.chaoscraft.client.modules.general.ParticlesModule;
+import com.chaoscraft.client.modules.general.AutoReconnectModule;
+import com.chaoscraft.client.modules.general.ConfirmDisconnectModule;
+import com.chaoscraft.client.modules.general.NoToastsModule;
+import com.chaoscraft.client.modules.gui.ClearBackgroundModule;
+import com.chaoscraft.client.modules.misc.StreamerModeModule;
+import com.chaoscraft.client.modules.screen.WindowTitleModule;
 import com.chaoscraft.client.settings.KeybindSetting;
 
 import java.util.ArrayList;
@@ -68,6 +96,11 @@ public class ModuleManager {
         register(new MenuModule());
         register(new FullbrightModule());
         register(new ZoomModule());
+        register(new NoFogModule());
+        register(new ParticlesModule());
+        register(new AutoReconnectModule());
+        register(new ConfirmDisconnectModule());
+        register(new NoToastsModule());
         // ---- HUD ----
         register(new FpsHud());
         register(new CpsHud());
@@ -80,25 +113,46 @@ public class ModuleManager {
         register(new HealthHud());
         register(new MovementHud());
         register(new ClockHud());
+        register(new DayCounterHud());
+        register(new UptimeHud());
+        register(new SaturationHud());
+        register(new CompassHud());
+        register(new InventoryHud());
+        register(new ItemCounterHud());
         register(new ScoreboardModule());
         register(new TablistModule());
         // ---- GUI ----
         register(new ChaosThemeModule());
         register(new EscMenuModule());
+        register(new ClearBackgroundModule());
         // ---- Spieler ----
         register(new ToggleSprintModule());
         register(new ToggleSneakModule());
         register(new PerspectiveModule());
         register(new FreeLookModule());
+        register(new HideArmorModule());
+        register(new NameTagsModule());
+        register(new NoHurtCamModule());
+        register(new LowFireModule());
+        register(new SlotLocksModule());
         // ---- World ----
         register(new WaypointsModule());
         register(new BlockOverlayModule());
         register(new TimeChangerModule());
+        register(new WeatherChangerModule());
+        register(new TntTimerModule());
+        register(new LightLevelModule());
+        register(new ArrowTrailModule());
         // ---- PvP ----
         register(new CrosshairModule());
         register(new DamageIndicatorHud());
         register(new PlayerInfoHud());
         register(new AutoGGModule());
+        register(new ComboCounterHud());
+        register(new ReachDisplayHud());
+        register(new HitBoxModule());
+        register(new HitColorModule());
+        register(new HealthIndicatorsModule());
         // ---- Performance ----
         register(new PerformanceModule());
         // ---- Cosmetics ----
@@ -112,6 +166,7 @@ public class ModuleManager {
         register(new ServerQuickMenuModule());
         // ---- Screen ----
         register(new FullscreenModule());
+        register(new WindowTitleModule());
         register(new ScreenshotModule());
         register(new ReplayModule());
         // ---- Audio ----
@@ -119,6 +174,7 @@ public class ModuleManager {
         register(new MusicPlayerModule());
         // ---- Misc ----
         register(new NotificationsModule());
+        register(new StreamerModeModule());
         // ---- Chaos ----
         register(new ClientInfoModule());
         register(new ProfilesModule());
