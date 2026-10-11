@@ -32,7 +32,8 @@
     "ClientPlayerEntityMixin",
     "ScreenBackgroundMixin",
     "ToastManagerMixin",
-    "AttackMixin"
+    "AttackMixin",
+    "HeldItemRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1

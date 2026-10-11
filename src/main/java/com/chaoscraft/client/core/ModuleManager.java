@@ -53,6 +53,7 @@ import com.chaoscraft.client.modules.hud.ItemCounterHud;
 import com.chaoscraft.client.modules.pvp.ComboCounterHud;
 import com.chaoscraft.client.modules.pvp.ReachDisplayHud;
 import com.chaoscraft.client.modules.pvp.HitBoxModule;
+import com.chaoscraft.client.modules.pvp.LowShieldModule;
 import com.chaoscraft.client.modules.pvp.HitColorModule;
 import com.chaoscraft.client.modules.pvp.HealthIndicatorsModule;
 import com.chaoscraft.client.modules.world.TntTimerModule;
@@ -152,6 +153,7 @@ public class ModuleManager {
         register(new ReachDisplayHud());
         register(new HitBoxModule());
         register(new HitColorModule());
+        register(new LowShieldModule());
         register(new HealthIndicatorsModule());
         // ---- Performance ----
         register(new PerformanceModule());
